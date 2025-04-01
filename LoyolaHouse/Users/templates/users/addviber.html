@@ -7,6 +7,11 @@
 {% endif %}
 <div class="container mt-4">
     <h2>Add Viber Contact</h2>
+    <div>
+        {% for contact in viber %}
+        <p>{{contact.viber_id}}</p>
+        {% endfor %}
+    </div>
     <form method="POST">
         {% csrf_token %}
         <div class="form-group mb-3">
