@@ -25,8 +25,17 @@ SECRET_KEY = 'django-insecure-aqf7o63drdg$q4c=cnc77e-6ets68788q!$@l5n%ky7p!2jjt5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
 
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'f243-103-62-153-140.ngrok-free.app',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',  # Trust all ngrok subdomains
+]
 
 # Application definition
 
@@ -39,8 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Users',
     'LoyolaSystem',
-    'ckeditor',
-    'ckeditor_uploader',
+    'django_ckeditor_5',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +96,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'LoyolaDB',
         'USER': 'root',
-        'PASSWORD': 'Moonlord24!',
+        'PASSWORD': 'remwell981996',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS':{
@@ -131,7 +139,27 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CKEDITOR_UPLOAD_PATH = "uploads/"
+# Django CKEditor 5 configuration
+CUSTOMIZE_CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': ['heading', '|', 'bold', 'italic', 'link',
+                   'bulletedList', 'numberedList', 'blockQuote', '|',
+                   'imageUpload', '|', 'undo', 'redo']
+    }
+}
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': ['heading', '|', 'bold', 'italic', 'link',
+                   'bulletedList', 'numberedList', 'blockQuote', '|',
+                   'imageUpload', '|', 'undo', 'redo'],
+        'height': 300,
+        'width': '100%',
+    }
+}
+
+CKEDITOR_5_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+CKEDITOR_5_UPLOAD_PATH = "uploads/"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

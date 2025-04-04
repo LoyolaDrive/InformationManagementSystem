@@ -13,6 +13,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/trix/1.3.1/trix.min.js"></script>
 
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/core@5.11.3/main.min.css' rel='stylesheet' />
+    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.min.css' rel='stylesheet' />
+
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.min.js'></script>
+
+    <style>
+        #miniCalendar .fc-toolbar-title { font-size: 1.2em; }
+        #miniCalendar .fc-button { padding: 0.2em 0.4em; font-size: 0.9em; }
+        #miniCalendar .fc-event { cursor: pointer; }
+        #miniCalendar { max-height: 400px; }
+        .fc-event { margin: 2px 0; padding: 2px; }
+        
+        #miniCalendarContainer {
+            display: none;
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            width: 300px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-light bg-light px-3">
@@ -22,33 +46,92 @@
         <div>
             <a href="{% url 'users:myAccount' %}" class="me-3">My Profile</a>
             <a href="{% url 'loyola:dashboard' %}" class="me-3"><i class="bi bi-house-fill icon-custom-color"></i> Dashboard</a>
-            <a href="#" class="me-3"><i class="bi bi-calendar-fill icon-custom-color"></i> Calendar</a>
+            <a href="{% url 'loyola:calendar' %}" class="me-3"><i class="bi bi-calendar-fill icon-custom-color"></i> Calendar</a>
             <a href="{% url 'loyola:logout' %}"><i class="bi bi-door-closed-fill icon-custom-color">Logout</i></a>
         </div>
     </nav>
     <div class="container mt-4">
+        <a href="{% url 'loyola:newAnnouncement' %}"><button class="btn btn-create-announcement"><i class="bi bi-envelope-paper-fill"></i> Create Announcement</button></a>
+        <a href="{% url 'loyola:profiles' %}"> <button class="btn btn-view-priest-profiles"><i class="bi bi-person-fill"></i>Priest Profiles</button></a>
         
-                <a href="{% url 'loyola:newAnnouncement' %}"><button class="btn btn-create-announcement"><i class="bi bi-envelope-paper-fill"></i> Create Announcement</button></a>
-                <a href="{% url 'loyola:profiles' %}"> <button class="btn btn-view-priest-profiles"><i class="bi bi-person-fill"></i>Priest Profiles</button></a>
-                {% block content %}{% endblock content %}
+        <!-- Mini Calendar Container -->
+        <div id="miniCalendarContainer" class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Calendar</h5>
+            </div>
+            <div class="card-body">
+                <div id="miniCalendar"></div>
+            </div>
+        </div>
+
+        {% block content %}{% endblock content %}
     </div>
 </body>
-
+`
 <script>
-    const buttons = document.querySelectorAll('.filter-btn');
-    const cards = document.querySelectorAll('.announcement-card');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter buttons logic
+        const buttons = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.announcement-card');
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.getAttribute('data-filter');
-            cards.forEach(card => {
-                if (filter === "All" || card.dataset.level === filter) {
-                    card.style.display = "block";
-                } else {
-                    card.style.display = "none";
-                }
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.getAttribute('data-filter');
+                cards.forEach(card => {
+                    if (filter === "All" || card.dataset.level === filter) {
+                        card.style.display = "block";
+                    } else {
+                        card.style.display = "none";
+                    }
+                });
             });
         });
+
+        // Mini Calendar initialization
+        const miniCalendarContainer = document.getElementById('miniCalendarContainer');
+        const currentPath = window.location.pathname;
+
+        // Show calendar only on dashboard page
+        if (currentPath.includes('dashboard')) {
+            miniCalendarContainer.style.display = 'block';
+            
+            var miniCalendarEl = document.getElementById('miniCalendar');
+            var miniCalendar = new FullCalendar.Calendar(miniCalendarEl, {
+                eventDidMount: function(info) {
+                    if (info.event.extendedProps.important) {
+                        info.el.style.backgroundColor = '#dc3545';
+                        info.el.style.borderColor = '#dc3545';
+                    }
+                },
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: ''
+                },
+                events: "{% url 'loyola:get_events' %}",
+                height: 'auto',
+                dayMaxEvents: 2,
+                displayEventTime: true,
+                eventTimeFormat: {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                },
+                eventClick: function(info) {
+                    currentEventId = info.event.id;
+                    fetch(`{% url 'loyola:get_event_details' 0 %}`.replace('0', currentEventId))
+                        .then(response => response.json())
+                        .then(data => {
+                            window.location.href = "{% url 'loyola:calendar' %}";
+                        })
+                        .catch(error => {
+                            console.error('Error fetching event details:', error);
+                        });
+                }
+            });
+            miniCalendar.render();
+        }
     });
 </script>
 

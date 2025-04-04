@@ -1,75 +1,91 @@
 {% extends "dashboard.html" %}
 
+{% block head %}
+<style>
+    /* Add any archive-specific styles here */
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="mb-3">
-        <button class="btn btn-outline-primary filter-btn" data-filter="All">All</button>
-        <button class="btn btn-outline-primary filter-btn" data-filter="National">National</button>
-        <button class="btn btn-outline-success filter-btn" data-filter="Regional">Regional</button>
-        <button class="btn btn-outline-warning filter-btn" data-filter="Global">Global</button>
-        <button class="btn btn-outline-danger filter-btn" data-filter="Local">Local</button>
-    </div>
-    {% for announcement in announcements %}
-    <div class="card mb-3 announcement-card" data-level="{{ announcement.email_level }}">
-        <div class="card-header" id="heading{{ forloop.counter }}">
-            <div class="row align-items-center w-100">
-                <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                    <div class="col-md-6">
-                        <button class="btn btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
-                            {{ announcement.subject }}
-                        </button>
-                    </div>
-                    <div class="col-md-3 text-md-center text-start">
-                        <!-- Level Badge -->
-                        <span class="badge 
-                            {% if announcement.email_level|stringformat:"s" == 'National' %}bg-primary
-                            {% elif announcement.email_level|stringformat:"s" == 'Regional' %}bg-success
-                            {% elif announcement.email_level|stringformat:"s" == 'Global' %}bg-warning
-                            {% elif announcement.email_level|stringformat:"s" == 'Local' %}bg-danger
-                            {% else %}bg-secondary
-                            {% endif %}">
-                            {{ announcement.email_level }}
-                        </span>
-                    </div>
-                    <div class="col-md-3 text-md-center text-start">
-                        <!-- Type Badge -->
-                        <span class="badge 
-                            {% if announcement.email_type|stringformat:"s" == 'Submission' %}bg-dark
-                            {% elif announcement.email_type|stringformat:"s" == 'Announcement' %}bg-info
-                            {% elif announcement.email_type|stringformat:"s" == 'Reminder' %}bg-secondary
-                            {% else %}bg-light
-                            {% endif %}">
-                            {{ announcement.email_type }}
-                        </span>
-                    </div>
-                </h5>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Main Content (Announcements) -->
+        <div class="col-md-12">
+            <div class="mb-3">
+                <button class="btn btn-outline-primary filter-btn" data-filter="all">All</button>
+                <button class="btn btn-outline-primary filter-btn" data-filter="national">National</button>
+                <button class="btn btn-outline-success filter-btn" data-filter="regional">Regional</button>
+                <button class="btn btn-outline-warning filter-btn" data-filter="global">Global</button>
+                <button class="btn btn-outline-danger filter-btn" data-filter="local">Local</button>
             </div>
-        </div>
-        <div id="collapse{{ forloop.counter }}" class="collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#accordionExample">
-            <div class="card-body">
-                {{ announcement.content|linebreaks }}
+            <div id="accordionExample">
+                {% for announcement in announcements %}
+                <div class="card mb-3 announcement-card" data-level="{{ announcement.email_level|lower }}">
+                    <div class="card-header" id="heading{{ forloop.counter }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
+                                    {{ announcement.subject }}
+                                </button>
+                            </h5>
+                            <div>
+                                <span class="badge bg-primary me-2">{{ announcement.email_level }}</span>
+                                <span class="badge bg-secondary me-2">{{ announcement.email_type }}</span>
+                                <a href="#" onclick="confirmDelete('{% url 'loyola:delete_announcement' announcement.id %}')" class="text-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="collapse{{ forloop.counter }}" class="collapse" data-bs-parent="#accordionExample">
+                        <div class="card-body">
+                            {{ announcement.content|linebreaks }}
+                            <small class="text-muted">Posted on {{ announcement.created_at|date:"F j, Y" }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No announcements available.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
-    {% empty %}
-    <p>No announcements available.</p>
-    {% endfor %}
 </div>
-<div class="col-md-4">
-    <div class="card">
-        <div class="card-header text-center">Loyola Calendar</div>
-        <div class="card-body">
-            <p class="text-center">March 2025</p>
-            <!-- Placeholder for Calendar -->
-            <p class="text-center">📅 [Calendar Placeholder]</p>
-            <h6>Important Dates / Events</h6>
-            <ul>
-                <li>Feb 18 - Commemoration Night</li>
-                <li>Feb 19 - Mass at Cathedral</li>
-                <li>Feb 21 - Commemoration Night</li>
-                <li>Feb 23 - Mass at Cathedral</li>
-            </ul>
-            <button class="btn btn-outline-primary w-100">View More</button>
+<script>
+    function confirmDelete(deleteUrl) {
+        if (confirm("Are you sure you want to delete this announcement? This action cannot be undone!")) {
+            window.location.href = deleteUrl;
+        }
+    }
+</script>
+<script>
+let currentEventId = null;
+
+
+</script>
+
+<!-- View Event Modal -->
+<div class="modal fade" id="viewEventModal" tabindex="-1" aria-labelledby="viewEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewEventModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewMode">
+                    <h4 id="eventTitle"></h4>
+                    <p><strong>Description:</strong> <span id="eventDescription"></span></p>
+                    <p><strong>Start:</strong> <span id="eventStart"></span></p>
+                    <p><strong>End:</strong> <span id="eventEnd"></span></p>
+                    <p><strong>Created by:</strong> <span id="eventCreatedBy"></span></p>
+                    <p><strong>Important:</strong> <span id="eventImportant"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'loyola:calendar' %}" class="btn btn-primary">Go to Calendar</a>
+            </div>
         </div>
     </div>
 </div>

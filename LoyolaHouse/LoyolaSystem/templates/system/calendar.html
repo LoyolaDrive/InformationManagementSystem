@@ -1,0 +1,248 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Calendar</h3>
+                </div>
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Add Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm" method="POST" action="{% url 'loyola:add_event' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="important" name="important">
+                        <label class="form-check-label" for="important">Mark as Important</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Event</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View/Edit Event Modal -->
+<div class="modal fade" id="viewEventModal" tabindex="-1" aria-labelledby="viewEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewEventModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewMode">
+                    <h4 id="eventTitle"></h4>
+                    <p><strong>Description:</strong> <span id="eventDescription"></span></p>
+                    <p><strong>Start:</strong> <span id="eventStart"></span></p>
+                    <p><strong>End:</strong> <span id="eventEnd"></span></p>
+                    <p><strong>Created by:</strong> <span id="eventCreatedBy"></span></p>
+                    <p><strong>Important:</strong> <span id="eventImportant"></span></p>
+                </div>
+                <div id="editMode" style="display: none;">
+                    <form id="editEventForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="editTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editStartDate" class="form-label">Start Date</label>
+                            <input type="datetime-local" class="form-control" id="editStartDate" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEndDate" class="form-label">End Date</label>
+                            <input type="datetime-local" class="form-control" id="editEndDate" name="end_date">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="editImportant" name="important">
+                            <label class="form-check-label" for="editImportant">Mark as Important</label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="deleteButton" onclick="deleteEvent()">Delete</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editButton" onclick="toggleEditMode()">Edit</button>
+                <button type="button" class="btn btn-success" id="saveButton" style="display: none;" onclick="saveEventChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+
+<script>
+let currentEventId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        eventDidMount: function(info) {
+            if (info.event.extendedProps.important) {
+                info.el.style.backgroundColor = '#dc3545';
+                info.el.style.borderColor = '#dc3545';
+            }
+        },
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: "{% url 'loyola:get_events' %}",
+        selectable: true,
+        select: function(info) {
+            // Reset form
+            document.getElementById('eventForm').reset();
+            // Set the start date in the modal
+            document.getElementById('start_date').value = info.startStr;
+            if (info.endStr) {
+                document.getElementById('end_date').value = info.endStr;
+            }
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            modal.show();
+        },
+        eventClick: function(info) {
+            // Get event details and show in modal
+            currentEventId = info.event.id;
+            fetch(`{% url 'loyola:get_event_details' 0 %}`.replace('0', currentEventId))
+                .then(response => response.json())
+                .then(data => {
+                    // Populate view mode
+                    document.getElementById('eventTitle').textContent = data.title;
+                    document.getElementById('eventDescription').textContent = data.description;
+                    document.getElementById('eventStart').textContent = new Date(data.start).toLocaleString();
+                    document.getElementById('eventEnd').textContent = data.end ? new Date(data.end).toLocaleString() : 'Not specified';
+                    document.getElementById('eventCreatedBy').textContent = data.created_by;
+                    document.getElementById('eventImportant').textContent = data.important ? 'Yes' : 'No';
+
+                    // Populate edit form
+                    document.getElementById('editTitle').value = data.title;
+                    document.getElementById('editDescription').value = data.description;
+                    document.getElementById('editStartDate').value = data.start.slice(0, 16);
+                    if (data.end) {
+                        document.getElementById('editEndDate').value = data.end.slice(0, 16);
+                    }
+                    document.getElementById('editImportant').checked = data.important;
+
+                    // Show view mode
+                    document.getElementById('viewMode').style.display = 'block';
+                    document.getElementById('editMode').style.display = 'none';
+                    document.getElementById('editButton').style.display = 'block';
+                    document.getElementById('saveButton').style.display = 'none';
+
+                    // Show the modal
+                    var modal = new bootstrap.Modal(document.getElementById('viewEventModal'));
+                    modal.show();
+                });
+        }
+    });
+    calendar.render();
+});
+
+function deleteEvent() {
+    if (confirm('Are you sure you want to delete this event?')) {
+        fetch(`{% url 'loyola:delete_event' 0 %}`.replace('0', currentEventId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                bootstrap.Modal.getInstance(document.getElementById('viewEventModal')).hide();
+                window.location.reload();
+            } else {
+                alert('Error deleting event');
+            }
+        });
+    }
+}
+
+function toggleEditMode() {
+    const viewMode = document.getElementById('viewMode');
+    const editMode = document.getElementById('editMode');
+    const editButton = document.getElementById('editButton');
+    const saveButton = document.getElementById('saveButton');
+
+    if (viewMode.style.display === 'none') {
+        viewMode.style.display = 'block';
+        editMode.style.display = 'none';
+        editButton.style.display = 'block';
+        saveButton.style.display = 'none';
+    } else {
+        viewMode.style.display = 'none';
+        editMode.style.display = 'block';
+        editButton.style.display = 'none';
+        saveButton.style.display = 'block';
+    }
+}
+
+function saveEventChanges() {
+    const form = document.getElementById('editEventForm');
+    const formData = new FormData(form);
+
+    fetch(`{% url 'loyola:update_event' 0 %}`.replace('0', currentEventId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Close modal and refresh calendar
+            bootstrap.Modal.getInstance(document.getElementById('viewEventModal')).hide();
+            window.location.reload();
+        } else {
+            alert('Error updating event');
+        }
+    });
+}
+</script>
+{% endblock content %}
