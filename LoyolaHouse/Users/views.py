@@ -183,3 +183,12 @@ def deleteUser(request, user_id):
 
     return redirect('loyola:profiles')
 
+def updateViber(request, user_id, viber_id):
+    if request.method == 'POST':
+        viber_contact = ViberContact.objects.get(viber_id=viber_id)
+        new_viber_id = request.POST.get('viber_id')
+        viber_contact.viber_id = new_viber_id
+        viber_contact.save()
+        messages.success(request, "Viber contact updated successfully.")
+    
+    return redirect('users:addViber', user_id=user_id)

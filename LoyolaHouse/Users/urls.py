@@ -11,4 +11,5 @@ urlpatterns = [
     path('my-profile', views.profile_view, name='myAccount'),
     path('<int:user_id>/<str:viber_id>/delete-viber', views.deleteViber, name='removeViber'),
     path('<int:user_id>/delete-user', views.deleteUser, name='removeUser'),
+    path('<int:user_id>/<str:viber_id>/update-viber', views.updateViber, name='updateViber'),
 ]

@@ -1,4 +1,25 @@
 {% extends "dashboard.html" %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Only handle Enter key to trigger form submission
+    const viberInputs = document.querySelectorAll('.viber-id');
+    viberInputs.forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const form = this.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 {% if messages %}
 {% for message in messages %}
@@ -6,21 +27,62 @@
 {% endfor %}
 {% endif %}
 <div class="container mt-4">
-    <h2>Add Viber Contact</h2>
-    <div>
+    <h2>Viber Contacts</h2>
+    
+    <!-- Existing Viber Contacts -->
+    <div class="mb-4">
         {% for contact in viber %}
-        <p>{{contact.viber_id}}</p>
-        {% endfor %}
-    </div>
-    <form method="POST">
-        {% csrf_token %}
-        <div class="form-group mb-3">
-            <label for="contact">Viber</label>
-            <input type="tel" class="form-control" name="contact" id="contact" required 
-                maxlength="11" minlength="11" value="09" pattern="[0-9]{11}"
-                onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+        <div class="d-flex justify-content-between align-items-center mb-2 viber-container">
+            <div class="flex-grow-1 me-3">
+                <form action="{% url 'users:updateViber' contact.user.id contact.viber_id %}" method="POST" style="margin: 0;">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="text" name="viber_id" class="form-control viber-id" 
+                               value="{{ contact.viber_id }}" 
+                               style="border-radius: 5px;" 
+                               maxlength="11" 
+                               minlength="11" 
+                               pattern="[0-9]{11}" 
+                               onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+            <div>
+                <a href="{% url 'users:removeViber' contact.user.id contact.viber_id %}" 
+                   class="btn btn-outline-dark" 
+                   onclick="return confirm('Are you sure you want to delete this Viber contact?');">
+                    Delete
+                </a>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Add Viber</button>
-    </form>
+        {% endfor %}
+        
+        {% if viber|length == 0 %}
+        <div class="alert alert-info">
+            No Viber contacts added yet.
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Add New Viber Contact Form -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Add New Viber Contact</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group mb-3">
+                    <label for="contact">Viber Number</label>
+                    <input type="tel" class="form-control" name="contact" id="contact" required 
+                        maxlength="11" minlength="11" value="09" pattern="[0-9]{11}"
+                        onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                    <small class="form-text text-muted">Format: 09XXXXXXXXX (11 digits)</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Viber Contact</button>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
