@@ -35,8 +35,27 @@
                             <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
                         </div>
                         <div class="mb-3">
-                            <label for="viber" class="form-label">Viber ID</label>
-                            <input type="text" class="form-control" id="viber" name="viber" value="{{ viber_contact.viber_id|default:'' }}">
+                            <label class="form-label">Viber IDs</label>
+                            {% if viber_contacts %}
+                                <div class="list-group mb-2">
+                                {% for contact in viber_contacts %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>{{ contact.viber_id }}</span>
+                                            <a href="{% url 'users:addViber' user.id %}" class="btn btn-sm btn-outline-primary">Manage</a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                                <div class="text-end">
+                                    <a href="{% url 'users:addViber' user.id %}" class="btn btn-primary btn-sm">Add/Edit Viber Contacts</a>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    No Viber contacts added yet. 
+                                    <a href="{% url 'users:addViber' user.id %}" class="btn btn-primary btn-sm ms-2">Add Viber Contact</a>
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="mb-4">

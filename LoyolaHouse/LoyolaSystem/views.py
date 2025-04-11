@@ -380,13 +380,10 @@ def edit_profile(request):
                 
         return redirect('loyola:edit_profile')
     
-    # Get user's viber contact if it exists
-    try:
-        viber_contact = ViberContact.objects.get(user=request.user)
-    except ViberContact.DoesNotExist:
-        viber_contact = None
+    # Get all user's viber contacts
+    viber_contacts = ViberContact.objects.filter(user=request.user)
         
     return render(request, 'system/edit_profile.html', {
         'user': request.user,
-        'viber_contact': viber_contact
+        'viber_contacts': viber_contacts
     })
