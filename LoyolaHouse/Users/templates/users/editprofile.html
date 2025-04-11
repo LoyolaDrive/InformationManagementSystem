@@ -1,8 +1,13 @@
 {% extends "dashboard.html" %}
+
+{% block extra_js %}{% endblock %}
+
 {% block content %}
 {% if messages %}
 {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} text-center">{{ message }}</div>
+<div class="my-4 mx-3 alert alert-{{ message.tags }} text-center {% if message.tags == 'error' %}bg-danger text-white rounded{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 <form action="{% url 'users:editAccount' user.id %}" method="POST">
@@ -36,18 +41,6 @@
     <div class="mb-3">
         <label for="email" class="form-label">Email</label>
         <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
-    </div>
-
-
-    <!-- Viber Contacts -->
-    <label class="form-label">Viber Contacts</label>
-    <div id="viber-contact-fields">
-        {% for contact in contacts %}
-            <div class="mb-2 input-group">
-                <input type="text" class="form-control" value="{{ contact.viber_id }}" disabled>
-                <a href="{% url 'users:removeViber' user.id contact.viber_id %}"><button type="button">Delete</button></a>
-            </div>
-        {% endfor %}
     </div>
 
     <button type="submit" class="btn btn-primary mt-3">Save Changes</button>
