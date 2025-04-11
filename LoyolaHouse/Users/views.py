@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, HttpResponse
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
@@ -100,10 +101,29 @@ def editprofile_view(request, user_id):
 
 
     if request.method == "POST" and request.POST.get('_method') == 'PATCH':
-        user.first_name = request.POST.get('first_name')
-        user.last_name = request.POST.get('last_name')
-        user.email = request.POST.get('email')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
         role = request.POST.get('role')
+        
+        # Check for existing email (excluding current user)
+        if User.objects.filter(email=email).exclude(id=user.id).exists():
+            messages.error(request, f'Email {email} is already registered to another priest!')
+            return redirect('users:editAccount', user_id=user_id)
+        
+        # Check for exact name match in a single row (excluding current user)
+        exact_match = User.objects.filter(
+            first_name__iexact=first_name,
+            last_name__iexact=last_name
+        ).exclude(id=user.id).first()
+        
+        if exact_match:
+            messages.error(request, f'A priest with the exact same name already exists! (Username: {exact_match.username})')
+            return redirect('users:editAccount', user_id=user_id)
+            
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
 
         currentrole.role_id = role
         currentrole.save()
@@ -162,3 +182,4 @@ def deleteUser(request, user_id):
     messages.success(request, "Jesuit Account deleted successfully.")
 
     return redirect('loyola:profiles')
+

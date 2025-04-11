@@ -3,16 +3,76 @@
 {% block head %}
 <style>
     /* Add any archive-specific styles here */
+    .filter-btn.active {
+        font-weight: bold;
+    }
+    .filter-btn:focus {
+        box-shadow: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
+        <!-- Important Dates Section -->
+        <div class="col-md-3 mb-4">
+            <!-- Important Events -->
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">⭐ Important Events - {{ current_month }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if important_events %}
+                        <div class="list-group list-group-flush">
+                        {% for event in important_events %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-danger">{{ event.title }}</h6>
+                                </div>
+                                <p class="mb-1 small">{{ event.start_date|date:"F j, Y" }}</p>
+                                {% if event.description %}
+                                    <small class="text-muted">{{ event.description|truncatechars:100 }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No important events this month.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Normal Events -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">📅 Other Events - {{ current_month }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if normal_events %}
+                        <div class="list-group list-group-flush">
+                        {% for event in normal_events %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ event.title }}</h6>
+                                </div>
+                                <p class="mb-1 small">{{ event.start_date|date:"F j, Y" }}</p>
+                                {% if event.description %}
+                                    <small class="text-muted">{{ event.description|truncatechars:100 }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No other events this month.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         <!-- Main Content (Announcements) -->
-        <div class="col-md-12">
+        <div class="col-md-9">
             <div class="mb-3">
-                <button class="btn btn-outline-primary filter-btn" data-filter="all">All</button>
+                <button class="btn btn-outline-secondary filter-btn" data-filter="All">All</button>
                 <button class="btn btn-outline-primary filter-btn" data-filter="national">National</button>
                 <button class="btn btn-outline-success filter-btn" data-filter="regional">Regional</button>
                 <button class="btn btn-outline-warning filter-btn" data-filter="global">Global</button>
@@ -29,9 +89,9 @@
                                 </button>
                             </h5>
                             <div>
-                                <span class="badge bg-primary me-2">{{ announcement.email_level }}</span>
+                                <span class="badge {% if announcement.email_level|stringformat:"s" == 'National' %}bg-primary{% elif announcement.email_level|stringformat:"s" == 'Regional' %}bg-success{% elif announcement.email_level|stringformat:"s" == 'Global' %}bg-warning{% elif announcement.email_level|stringformat:"s" == 'Local' %}bg-danger{% else %}bg-secondary{% endif %} me-2">{{ announcement.email_level }}</span>
                                 <span class="badge bg-secondary me-2">{{ announcement.email_type }}</span>
-                                <a href="#" onclick="confirmDelete('{% url 'loyola:delete_announcement' announcement.id %}')" class="text-danger">
+                                <a href="#" onclick="confirmDelete('{% url 'loyola:delete_announcement' announcement.id %}')" class="text-danger"> <!--IGNORE-->
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>
@@ -52,16 +112,44 @@
     </div>
 </div>
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttons = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.announcement-card');
+        
+        // Set 'All' button as active by default
+        document.querySelector('[data-filter="All"]').classList.add('active');
+        
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                buttons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+                
+                const filter = btn.getAttribute('data-filter').toLowerCase();
+                cards.forEach(card => {
+                    const level = card.getAttribute('data-level');
+                    if (filter === 'all' || level === filter) {
+                        card.style.display = '';
+                        // Add fade-in animation
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            card.style.transition = 'opacity 0.3s ease-in-out';
+                            card.style.opacity = '1';
+                        }, 50);
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+
     function confirmDelete(deleteUrl) {
         if (confirm("Are you sure you want to delete this announcement? This action cannot be undone!")) {
             window.location.href = deleteUrl;
         }
     }
-</script>
-<script>
-let currentEventId = null;
-
-
 </script>
 
 <!-- View Event Modal -->

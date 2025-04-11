@@ -17,4 +17,5 @@ urlpatterns = [
     path('event/<int:event_id>/update/', views.update_event, name='update_event'),
     path('event/<int:event_id>/delete/', views.delete_event, name='delete_event'),
     path('viber-webhook/', views.viber_webhook, name='viber_webhook'),
+    path('edit-profile/', views.edit_profile, name='edit_profile'),
 ]

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.views.decorators.cache import never_cache
 from .models import EmailLevel, EmailType, Announcement, ViberContact, Event
 from django.utils.html import strip_tags
@@ -9,6 +9,8 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.contrib.auth.forms import PasswordChangeForm
 import json
 import requests
 
@@ -31,9 +33,29 @@ def log_out(request):
 
 @login_required
 def email_view(request):
+    from datetime import datetime
+    current_date = datetime.now()
     announcements = Announcement.objects.all()
+    
+    # Get important events for the current month
+    important_events = Event.objects.filter(
+        start_date__year=current_date.year,
+        start_date__month=current_date.month,
+        important=True
+    ).order_by('start_date')
+    
+    # Get normal events for the current month
+    normal_events = Event.objects.filter(
+        start_date__year=current_date.year,
+        start_date__month=current_date.month,
+        important=False
+    ).order_by('start_date')
+    
     return render(request, 'system/archive.html', {
         'announcements': announcements,
+        'important_events': important_events,
+        'normal_events': normal_events,
+        'current_month': current_date.strftime('%B %Y')
     })
 
 @login_required
@@ -299,3 +321,72 @@ def update_event(request, event_id):
         except Event.DoesNotExist:
             return JsonResponse({'error': 'Event not found'}, status=404)
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        # Get form data
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        viber = request.POST.get('viber')
+        
+        # Check for existing email (excluding current user)
+        if User.objects.filter(email=email).exclude(id=request.user.id).exists():
+            messages.error(request, f'Email {email} is already registered to another priest!')
+            return redirect('loyola:edit_profile')
+            
+        # Check for existing viber contact (excluding current user)
+        if viber and ViberContact.objects.filter(viber_id=viber).exclude(user=request.user).exists():
+            messages.error(request, f'Viber contact {viber} is already registered to another priest!')
+            return redirect('loyola:edit_profile')
+            
+        # Check for exact name match in a single row (excluding current user)
+        exact_match = User.objects.filter(
+            first_name__iexact=first_name,
+            last_name__iexact=last_name
+        ).exclude(id=request.user.id).first()
+        
+        if exact_match:
+            messages.error(request, f'A priest with the exact same name already exists! (Username: {exact_match.username})')
+            return redirect('loyola:edit_profile')
+        
+        # Update user information
+        user = request.user
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+        
+        # Update or create viber contact
+        ViberContact.objects.update_or_create(
+            user=user,
+            defaults={'viber_id': viber, 'name': f'{first_name} {last_name}'}
+        )
+        
+        # Handle password change if requested
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password and confirm_password:
+            if new_password == confirm_password:
+                user.set_password(new_password)
+                user.save()
+                # Update session to prevent logout
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Your profile was successfully updated!')
+            else:
+                messages.error(request, 'Passwords do not match!')
+                
+        return redirect('loyola:edit_profile')
+    
+    # Get user's viber contact if it exists
+    try:
+        viber_contact = ViberContact.objects.get(user=request.user)
+    except ViberContact.DoesNotExist:
+        viber_contact = None
+        
+    return render(request, 'system/edit_profile.html', {
+        'user': request.user,
+        'viber_contact': viber_contact
+    })

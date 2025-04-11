@@ -1,12 +1,47 @@
 {% extends "dashboard.html" %}
 
+{% block head %}
+<style>
+    /* Calendar Styles */
+    .fc {
+        background-color: white;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.5em;
+        font-weight: 500;
+    }
+    .fc .fc-button {
+        padding: 0.4em 0.65em;
+    }
+    .fc .fc-day-today {
+        background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+    }
+    .fc .fc-event {
+        border-radius: 3px;
+        padding: 2px 4px;
+        margin: 1px 0;
+        cursor: pointer;
+    }
+    .fc .fc-event.important-event {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .fc .fc-event:hover {
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Calendar</h3>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Calendar</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal">
+                        <i class="bi bi-plus-circle"></i> Add Event
+                    </button>
                 </div>
                 <div class="card-body">
                     <div id="calendar"></div>
@@ -117,8 +152,15 @@
 let currentEventId = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Initialize main calendar with improved UI
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
+        height: 'auto',
+        contentHeight: 'auto',
+        aspectRatio: 2,
+        fixedWeekCount: false,
+        showNonCurrentDates: false,
         eventDidMount: function(info) {
             if (info.event.extendedProps.important) {
                 info.el.style.backgroundColor = '#dc3545';
@@ -130,6 +172,23 @@ document.addEventListener('DOMContentLoaded', function() {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: 'Today',
+            month: 'Month',
+            week: 'Week',
+            day: 'Day'
+        },
+        views: {
+            dayGridMonth: {
+                titleFormat: { year: 'numeric', month: 'long' }
+            },
+            timeGridWeek: {
+                titleFormat: { year: 'numeric', month: 'short', day: '2-digit' }
+            },
+            timeGridDay: {
+                titleFormat: { year: 'numeric', month: 'long', day: '2-digit', weekday: 'long' }
+            }
         },
         events: "{% url 'loyola:get_events' %}",
         selectable: true,
