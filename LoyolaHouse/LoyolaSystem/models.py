@@ -25,6 +25,9 @@ class Announcement(models.Model):
     subject = models.CharField(max_length=255)
     content = CKEditor5Field('Content', config_name='default')
     created_at = models.DateTimeField(auto_now_add=True)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
+    file_url = models.URLField(max_length=500, null=True, blank=True)
+    drive_file_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.subject

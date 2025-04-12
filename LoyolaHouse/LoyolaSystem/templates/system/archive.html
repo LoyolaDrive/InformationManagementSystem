@@ -71,16 +71,35 @@
         </div>
         <!-- Main Content (Announcements) -->
         <div class="col-md-9">
-            <div class="mb-3">
-                <button class="btn btn-outline-secondary filter-btn" data-filter="All">All</button>
-                <button class="btn btn-outline-primary filter-btn" data-filter="national">National</button>
-                <button class="btn btn-outline-success filter-btn" data-filter="regional">Regional</button>
-                <button class="btn btn-outline-warning filter-btn" data-filter="global">Global</button>
-                <button class="btn btn-outline-danger filter-btn" data-filter="local">Local</button>
+            <!-- Search and Filter Bar -->
+            <div class="card mb-3">
+                <div class="card-body p-3">
+                    <!-- Search Bar -->
+                    <form method="GET" action="{% url 'loyola:dashboard' %}" id="searchForm">
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" id="searchInput" name="search" class="form-control" placeholder="Search announcements..." value="{{ search_query }}">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Filter Buttons -->
+                        <div class="d-flex justify-content-center flex-wrap">
+                            <a href="{% url 'loyola:dashboard' %}{% if search_query %}?search={{ search_query }}{% endif %}" class="btn {% if category_filter == 'all' %}btn-secondary{% else %}btn-outline-secondary{% endif %} me-2 mb-1">All</a>
+                            <a href="{% url 'loyola:dashboard' %}?category=national{% if search_query %}&search={{ search_query }}{% endif %}" class="btn {% if category_filter == 'national' %}btn-primary{% else %}btn-outline-primary{% endif %} me-2 mb-1">National</a>
+                            <a href="{% url 'loyola:dashboard' %}?category=regional{% if search_query %}&search={{ search_query }}{% endif %}" class="btn {% if category_filter == 'regional' %}btn-success{% else %}btn-outline-success{% endif %} me-2 mb-1">Regional</a>
+                            <a href="{% url 'loyola:dashboard' %}?category=global{% if search_query %}&search={{ search_query }}{% endif %}" class="btn {% if category_filter == 'global' %}btn-warning{% else %}btn-outline-warning{% endif %} me-2 mb-1">Global</a>
+                            <a href="{% url 'loyola:dashboard' %}?category=local{% if search_query %}&search={{ search_query }}{% endif %}" class="btn {% if category_filter == 'local' %}btn-danger{% else %}btn-outline-danger{% endif %} mb-1">Local</a>
+                        </div>
+                        <input type="hidden" name="category" value="{{ category_filter }}" id="categoryInput">
+                    </form>
+                </div>
             </div>
             <div id="accordionExample">
                 {% for announcement in announcements %}
-                <div class="card mb-3 announcement-card" data-level="{{ announcement.email_level|lower }}">
+                <div class="card mb-3 announcement-card">
                     <div class="card-header" id="heading{{ forloop.counter }}">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -100,7 +119,24 @@
                     <div id="collapse{{ forloop.counter }}" class="collapse" data-bs-parent="#accordionExample">
                         <div class="card-body">
                             {{ announcement.content|linebreaks }}
-                            <small class="text-muted">Posted on {{ announcement.created_at|date:"F j, Y" }}</small>
+                            
+                            {% if announcement.file_url %}
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark me-2 fs-5"></i>
+                                    <div>
+                                        <div>Attachment: <strong>{{ announcement.file_name }}</strong></div>
+                                        <a href="{{ announcement.file_url }}" target="_blank" class="btn btn-sm btn-primary mt-1">
+                                            <i class="bi bi-cloud-download"></i> View/Download
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-2">
+                                <small class="text-muted">Posted on {{ announcement.created_at|date:"F j, Y" }}</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,40 +144,64 @@
                 <p>No announcements available.</p>
                 {% endfor %}
             </div>
+            
+            <!-- Pagination Controls -->
+            {% if announcements.has_other_pages %}
+            <nav aria-label="Announcement pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if announcements.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in announcements.paginator.page_range %}
+                        {% if announcements.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > announcements.number|add:'-3' and num < announcements.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if announcements.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter != 'all' %}&category={{ category_filter }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
     </div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const buttons = document.querySelectorAll('.filter-btn');
+        // Handle form submission when category is clicked
+        document.querySelectorAll('.btn-outline-secondary, .btn-outline-primary, .btn-outline-success, .btn-outline-warning, .btn-outline-danger, .btn-secondary, .btn-primary, .btn-success, .btn-warning, .btn-danger').forEach(btn => {
+            // We're using links now, so this is just for any additional JS functionality
+            // The main filtering happens server-side
+        });
+
+        // Add fade-in animation for cards
         const cards = document.querySelectorAll('.announcement-card');
-        
-        // Set 'All' button as active by default
-        document.querySelector('[data-filter="All"]').classList.add('active');
-        
-        buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active class from all buttons
-                buttons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
-                btn.classList.add('active');
-                
-                const filter = btn.getAttribute('data-filter').toLowerCase();
-                cards.forEach(card => {
-                    const level = card.getAttribute('data-level');
-                    if (filter === 'all' || level === filter) {
-                        card.style.display = '';
-                        // Add fade-in animation
-                        card.style.opacity = '0';
-                        setTimeout(() => {
-                            card.style.transition = 'opacity 0.3s ease-in-out';
-                            card.style.opacity = '1';
-                        }, 50);
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.3s ease-in-out';
+                card.style.opacity = '1';
+            }, 50);
         });
     });
 

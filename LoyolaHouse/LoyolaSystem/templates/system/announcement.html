@@ -1,55 +1,71 @@
 {% extends "dashboard.html" %}
 {% block content %}
-<div class="container mt-4">
-    <form method="POST">
+<div class="container mt-5">
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <label for="email_level">Email Level:</label>
-        <select name="email_level" id="email_level">
-            {% for level in email_levels %}
-                <option value="{{ level.level_id }}">{{ level.level_desc }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="email_type">Email Type:</label>
-        <select name="email_type" id="email_type">
-            {% for type in email_types %}
-                <option value="{{ type.type_id }}">{{ type.type_desc }}</option>
-            {% endfor %}
-        </select>
-
-        <div>
-            <label for='emailSubject'>Subject:</label>
-            <input style='width: 500px;' type='text' id='emailSubject' name='emailSubject' placeholder='Subject' required/>
+        <div class="form-group mb-3">
+            <label for="email_level" class="form-label">Email Level:</label>
+            <select name="email_level" id="email_level" class="form-select">
+                {% for level in email_levels %}
+                    <option value="{{ level.level_id }}">{{ level.level_desc }}</option>
+                {% endfor %}
+            </select>
         </div>
 
-        <div>
-            <label for="emailContent">Content:</label>
+        <div class="form-group mb-3">
+            <label for="email_type" class="form-label">Email Type:</label>
+            <select name="email_type" id="email_type" class="form-select">
+                {% for type in email_types %}
+                    <option value="{{ type.type_id }}">{{ type.type_desc }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for='emailSubject' class="form-label">Subject:</label>
+            <input class="form-control" type='text' id='emailSubject' name='emailSubject' placeholder='Subject' required/>
+        </div>
+
+        <div class="form-group mb-4">
+            <label for="emailContent" class="form-label">Content:</label>
             <input id="emailContent" type="hidden" name="emailContent">
-            <trix-editor input="emailContent" style="width: 600px; height: 500px"></trix-editor>
+            <trix-editor input="emailContent" class="form-control" style="min-height: 300px"></trix-editor>
         </div>
 
-        <div  class='text-center mt-3'>
+        <div class="form-group mb-4">
+            <label for="attachment" class="form-label">Attachment (optional):</label>
+            <input type="file" class="form-control" id="attachment" name="attachment">
+            <div class="form-text text-muted mt-1">
+                Upload documents, images, or any files to be stored in Google Drive.
+            </div>
+        </div>
+
+        <div class="text-center mt-4 mb-4">
             <button type="submit" class="btn btn-view-priest-profiles">Save</button>
         </div>
     </form>
 </div>
-<div class="container mt-4">
-    <div>
-        <label>Select Recipients:</label>
-        <div class="mb-3" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
-            {% for user in users %}
-                {% for viber in vibers %}
-                {% if viber.user_id == user.id %}
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="recipients" value="{{ user.contact_number }}" id="user{{ user.id }}">
-                    <label class="form-check-label" for="user{{ user.id }}">
-                        {{ user.last_name }}, {{ user.first_name }} - {{viber.viber_id}}
-                    </label>
-                </div>
-                {% endif %}
+<div class="container mb-5">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Select Recipients</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3" style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 5px;">
+                {% for user in users %}
+                    {% for viber in vibers %}
+                    {% if viber.user_id == user.id %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="recipients" value="{{ user.contact_number }}" id="user{{ user.id }}">
+                        <label class="form-check-label" for="user{{ user.id }}">
+                            {{ user.last_name }}, {{ user.first_name }} - {{viber.viber_id}}
+                        </label>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
+            </div>
         </div>
     </div>
 </div>

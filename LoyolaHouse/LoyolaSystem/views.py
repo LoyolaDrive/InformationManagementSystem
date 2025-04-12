@@ -11,8 +11,10 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 import requests
+from .drive_utils import upload_file_to_drive
 
 # Create your views here.
 @never_cache
@@ -34,8 +36,41 @@ def log_out(request):
 @login_required
 def email_view(request):
     from datetime import datetime
+    from django.db.models import Q
     current_date = datetime.now()
-    announcements = Announcement.objects.all()
+    
+    # Get search parameters
+    search_query = request.GET.get('search', '').strip()
+    category_filter = request.GET.get('category', 'all').lower()
+    
+    # Start with all announcements ordered by most recent first
+    all_announcements = Announcement.objects.all().order_by('-created_at')
+    
+    # Apply search filter if provided
+    if search_query:
+        all_announcements = all_announcements.filter(
+            Q(subject__icontains=search_query) | 
+            Q(content__icontains=search_query)
+        )
+    
+    # Apply category filter if not 'all'
+    if category_filter != 'all' and category_filter in ['national', 'regional', 'global', 'local']:
+        all_announcements = all_announcements.filter(
+            Q(email_level__level_desc__iexact=category_filter)
+        )
+    
+    # Set up pagination - 10 announcements per page
+    page = request.GET.get('page', 1)
+    paginator = Paginator(all_announcements, 8)
+    
+    try:
+        announcements = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        announcements = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page of results
+        announcements = paginator.page(paginator.num_pages)
     
     # Get important events for the current month
     important_events = Event.objects.filter(
@@ -55,7 +90,9 @@ def email_view(request):
         'announcements': announcements,
         'important_events': important_events,
         'normal_events': normal_events,
-        'current_month': current_date.strftime('%B %Y')
+        'current_month': current_date.strftime('%B %Y'),
+        'search_query': search_query,
+        'category_filter': category_filter
     })
 
 @login_required
@@ -65,20 +102,45 @@ def create_announcement(request):
         email_type_id = request.POST.get('email_type')
         subject = request.POST.get('emailSubject')
         raw_content = request.POST.get('emailContent')
+        attachment = request.FILES.get('attachment')
 
         formatted_content = convert_html_to_text(raw_content)
 
         if email_level_id and email_type_id and subject and raw_content:
             email_level = EmailLevel.objects.get(pk=email_level_id)
             email_type = EmailType.objects.get(pk=email_type_id)
-            sendNotif(formatted_content)
             
-            Announcement.objects.create(
+            # Create the announcement object
+            announcement = Announcement(
                 email_level=email_level,
                 email_type=email_type,
                 subject=subject,
-                content=formatted_content 
+                content=formatted_content
             )
+            
+            # Handle file attachment if provided
+            if attachment:
+                try:
+                    file_name = attachment.name
+                    file_id, file_url = upload_file_to_drive(attachment, file_name)
+                    
+                    if file_id and file_url:
+                        announcement.file_name = file_name
+                        announcement.file_url = file_url
+                        announcement.drive_file_id = file_id
+                        
+                        # Add file info to the notification message
+                        formatted_content += f"\n\nAttachment: {file_name}\nDownload: {file_url}"
+                    else:
+                        messages.warning(request, 'Failed to upload the attachment to Google Drive. The announcement was saved without the attachment.')
+                except Exception as e:
+                    messages.error(request, f'Error uploading file: {str(e)}')
+            
+            # Send notification and save announcement
+            sendNotif(formatted_content)
+            announcement.save()
+            
+            messages.success(request, 'Announcement created successfully!')
             return redirect('loyola:dashboard')
 
 
