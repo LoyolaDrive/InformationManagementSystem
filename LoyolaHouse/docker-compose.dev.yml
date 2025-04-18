@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=LoyolaHouse.settings
+      - DATABASE_HOST=db
+      - DATABASE_NAME=LoyolaDB
+      - DATABASE_USER=loyola_user
+      - DATABASE_PASSWORD=loyola_password
+      - DATABASE_PORT=3306
+    networks:
+      - loyola_network
+
+  db:
+    image: mysql:8.0
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - MYSQL_DATABASE=LoyolaDB
+      - MYSQL_USER=loyola_user
+      - MYSQL_PASSWORD=loyola_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    networks:
+      - loyola_network
+
+networks:
+  loyola_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:

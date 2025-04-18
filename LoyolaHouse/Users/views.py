@@ -8,6 +8,7 @@ from django.views.decorators.cache import never_cache
 from .models import roles, UserRole
 from django.contrib.auth.models import User
 from LoyolaSystem.models import ViberContact
+from .decorators import superuser_required, owner_or_superuser_required
 
 # Create your views here.
 @never_cache
@@ -31,6 +32,7 @@ def login_view(request):
     return render(request, 'users/login.html')
 
 @login_required
+@superuser_required
 def register_view(request):
     if request.method == 'POST':
         username = request.POST.get('email')
@@ -57,7 +59,7 @@ def register_view(request):
                 is_superuser = True
                 is_staff = True
             elif selected_role.role_desc.lower() == 'regular':
-                is_active = False
+                is_active = True
 
             user = User.objects.create_user(
                 username = username,
@@ -83,7 +85,7 @@ def register_view(request):
             )
         
             messages.success(request, 'New Jesuit has been registered to Loyola System')
-            return redirect('users:newAccount')
+            return redirect('loyola:profiles')
         
         else:
             messages.error(request,'Jesuit has already been registered')
@@ -95,6 +97,7 @@ def register_view(request):
     })
 
 @login_required
+@owner_or_superuser_required
 def editprofile_view(request, user_id):
     user = User.objects.get(id=user_id)
     currentrole = UserRole.objects.get(user=user_id)
@@ -138,7 +141,7 @@ def editprofile_view(request, user_id):
             user.is_superuser = True
             user.is_staff = True 
         elif selected_role.role_desc.lower() == "regular":
-            user.is_active = False
+            user.is_active = True
 
         user.save()
 
@@ -153,6 +156,8 @@ def editprofile_view(request, user_id):
             'currentrole': currentrole
         })
 
+@login_required
+@owner_or_superuser_required
 def addviber_view(request, user_id):
     if request.method == 'POST':
 
@@ -171,18 +176,24 @@ def addviber_view(request, user_id):
 def profile_view(request):
     return render(request, 'users/myprofile.html')
 
-def deleteViber(request, viber_id, user_id):
+@login_required
+@owner_or_superuser_required
+def deleteViber(request, user_id, viber_id):
     ViberContact.objects.filter(viber_id=viber_id).delete()
     messages.success(request, "Viber contact deleted successfully.")
 
-    return redirect('users:editAccount', user_id=user_id)
+    return redirect('users:addViber', user_id=user_id)
 
+@login_required
+@superuser_required
 def deleteUser(request, user_id):
     User.objects.filter(id=user_id).delete()
     messages.success(request, "Jesuit Account deleted successfully.")
 
     return redirect('loyola:profiles')
 
+@login_required
+@owner_or_superuser_required
 def updateViber(request, user_id, viber_id):
     if request.method == 'POST':
         viber_contact = ViberContact.objects.get(viber_id=viber_id)

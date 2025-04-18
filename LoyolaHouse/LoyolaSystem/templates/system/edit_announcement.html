@@ -1,0 +1,146 @@
+{% extends "dashboard.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="mb-4">
+        <h2>Edit Announcement</h2>
+        <p class="text-muted">Update the announcement details below</p>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group mb-3">
+            <label for="email_level" class="form-label">Email Level:</label>
+            <select name="email_level" id="email_level" class="form-select">
+                {% for level in email_levels %}
+                    <option value="{{ level.level_id }}" {% if level.level_id == announcement.email_level.level_id %}selected{% endif %}>{{ level.level_desc }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="email_type" class="form-label">Email Type:</label>
+            <select name="email_type" id="email_type" class="form-select">
+                {% for type in email_types %}
+                    <option value="{{ type.type_id }}" {% if type.type_id == announcement.email_type.type_id %}selected{% endif %}>{{ type.type_desc }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for='emailSubject' class="form-label">Subject:</label>
+            <input class="form-control" type='text' id='emailSubject' name='emailSubject' value="{{ announcement.subject }}" required/>
+        </div>
+
+        <div class="form-group mb-4">
+            <label for="emailContent" class="form-label">Content:</label>
+            <textarea id="emailContent" name="emailContent" class="form-control">{{ announcement.content|safe }}</textarea>
+        </div>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                ClassicEditor
+                    .create(document.querySelector('#emailContent'), {
+                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote', 'insertTable', 'undo', 'redo'],
+                        link: {
+                            // Enable automatic addition of https:// to external links
+                            addTargetToExternalLinks: true,
+                            defaultProtocol: 'https://',
+                            // Let users decide whether links open in new tabs
+                            decorators: {
+                                openInNewTab: {
+                                    mode: 'manual',
+                                    label: 'Open in a new tab',
+                                    defaultValue: true,
+                                    attributes: {
+                                        target: '_blank',
+                                        rel: 'noopener noreferrer'
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            });
+        </script>
+
+        <div class="form-group mb-4">
+            <label class="form-label">Attachment:</label>
+            {% if announcement.file_url %}
+            <div class="p-3 bg-light rounded mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-2"><i class="bi bi-paperclip"></i> <strong>{{ announcement.file_name }}</strong></p>
+                        <a href="{{ announcement.file_url }}" target="_blank" class="btn btn-sm btn-primary me-2">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAttachmentModal">
+                            <i class="bi bi-trash"></i> Delete Attachment
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="replaceAttachment" name="replaceAttachment">
+                <label class="form-check-label" for="replaceAttachment">
+                    Replace with a new attachment
+                </label>
+            </div>
+            <div id="newAttachmentSection" style="display: none;">
+                <input type="file" class="form-control" id="attachment" name="attachment">
+                <div class="form-text text-muted mt-1">
+                    Upload documents, images, or any files to be stored in Google Drive.
+                </div>
+            </div>
+            {% else %}
+            <input type="file" class="form-control" id="attachment" name="attachment">
+            <div class="form-text text-muted mt-1">
+                Upload documents, images, or any files to be stored in Google Drive.
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="text-center mt-4 mb-4">
+            <a href="{% url 'loyola:dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary">Update Announcement</button>
+        </div>
+    </form>
+</div>
+
+<!-- Delete Attachment Modal -->
+<div class="modal fade" id="deleteAttachmentModal" tabindex="-1" aria-labelledby="deleteAttachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAttachmentModalLabel">Confirm Delete Attachment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the attachment <strong>{{ announcement.file_name }}</strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'loyola:delete_attachment' announcement.id %}" class="btn btn-danger">Delete Attachment</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle new attachment section when checkbox is clicked
+        const replaceAttachmentCheckbox = document.getElementById('replaceAttachment');
+        const newAttachmentSection = document.getElementById('newAttachmentSection');
+        
+        if (replaceAttachmentCheckbox && newAttachmentSection) {
+            replaceAttachmentCheckbox.addEventListener('change', function() {
+                newAttachmentSection.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+    });
+</script>
+
+{% endblock content %}

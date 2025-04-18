@@ -1,3 +1,7 @@
+* {
+    transition: all 0.3s ease;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
 }
@@ -79,3 +83,4 @@ body {
 .dashboard{
     background-color: red;
 }
+

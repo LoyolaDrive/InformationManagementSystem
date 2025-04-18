@@ -29,6 +29,94 @@
     .fc .fc-event:hover {
         opacity: 0.9;
     }
+    
+    /* Event Modal Styles */
+    .event-modal .modal-content {
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border: none;
+    }
+    
+    .event-modal .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .event-modal .event-title {
+        color: #347BA7;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #eee;
+    }
+    
+    .event-modal .event-section {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .event-modal .event-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .event-modal .section-title {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .event-modal .section-title i {
+        margin-right: 8px;
+        color: #347BA7;
+    }
+    
+    .event-modal .event-info-row {
+        margin-bottom: 12px;
+        display: flex;
+        padding-left: 10px;
+        border-left: 3px solid #f0f0f0;
+    }
+    
+    .event-modal .event-info-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .event-modal .event-label {
+        font-weight: 600;
+        color: #555;
+        width: 100px;
+        flex-shrink: 0;
+    }
+    
+    .event-modal .event-value {
+        color: #333;
+        flex-grow: 1;
+    }
+    
+    .event-modal .important-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 5px;
+    }
+    
+    .event-modal .important-badge.yes {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .event-modal .important-badge.no {
+        background-color: #6c757d;
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -39,9 +127,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">Calendar</h3>
+                    {% if user.is_superuser %}
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal">
                         <i class="bi bi-plus-circle"></i> Add Event
                     </button>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div id="calendar"></div>
@@ -90,21 +180,56 @@
 </div>
 
 <!-- View/Edit Event Modal -->
-<div class="modal fade" id="viewEventModal" tabindex="-1" aria-labelledby="viewEventModalLabel" aria-hidden="true">
+<div class="modal fade event-modal" id="viewEventModal" tabindex="-1" aria-labelledby="viewEventModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewEventModalLabel">Event Details</h5>
+                <h5 class="modal-title" id="viewEventModalLabel"><i class="bi bi-calendar-event"></i> Event Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div id="viewMode">
-                    <h4 id="eventTitle"></h4>
-                    <p><strong>Description:</strong> <span id="eventDescription"></span></p>
-                    <p><strong>Start:</strong> <span id="eventStart"></span></p>
-                    <p><strong>End:</strong> <span id="eventEnd"></span></p>
-                    <p><strong>Created by:</strong> <span id="eventCreatedBy"></span></p>
-                    <p><strong>Important:</strong> <span id="eventImportant"></span></p>
+                    <h3 class="event-title" id="eventTitle"></h3>
+                    
+                    <div class="event-section">
+                        <div class="section-title">
+                            <i class="bi bi-card-text"></i> Description
+                        </div>
+                        <div class="event-info-row">
+                            <div class="event-value" id="eventDescription"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="event-section">
+                        <div class="section-title">
+                            <i class="bi bi-calendar-week"></i> Date & Time
+                        </div>
+                        <div class="event-info-row">
+                            <div class="event-label">Start:</div>
+                            <div class="event-value" id="eventStart"></div>
+                        </div>
+                        <div class="event-info-row">
+                            <div class="event-label">End:</div>
+                            <div class="event-value" id="eventEnd"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="event-section">
+                        <div class="section-title">
+                            <i class="bi bi-info-circle"></i> Additional Information
+                        </div>
+                        <div class="event-info-row">
+                            <div class="event-label">Created by:</div>
+                            <div class="event-value" id="eventCreatedBy"></div>
+                        </div>
+                        <div class="event-info-row">
+                            <div class="event-label">Priority:</div>
+                            <div class="event-value">
+                                <span id="eventImportantText"></span>
+                                <span id="eventImportantBadge" class="important-badge"></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="editMode" style="display: none;">
                     <form id="editEventForm">
@@ -133,10 +258,14 @@
                 </div>
             </div>
             <div class="modal-footer">
+                {% if user.is_superuser %}
                 <button type="button" class="btn btn-danger" id="deleteButton" onclick="deleteEvent()">Delete</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" id="closeButton" data-bs-dismiss="modal">Close</button>
+                {% if user.is_superuser %}
                 <button type="button" class="btn btn-primary" id="editButton" onclick="toggleEditMode()">Edit</button>
                 <button type="button" class="btn btn-success" id="saveButton" style="display: none;" onclick="saveEventChanges()">Save Changes</button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -191,7 +320,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         events: "{% url 'loyola:get_events' %}",
-        selectable: true,
+        selectable: {% if user.is_superuser %}true{% else %}false{% endif %},
+        {% if user.is_superuser %}
         select: function(info) {
             // Reset form
             document.getElementById('eventForm').reset();
@@ -204,6 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var modal = new bootstrap.Modal(document.getElementById('eventModal'));
             modal.show();
         },
+        {% endif %}
         eventClick: function(info) {
             // Get event details and show in modal
             currentEventId = info.event.id;
@@ -212,11 +343,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     // Populate view mode
                     document.getElementById('eventTitle').textContent = data.title;
-                    document.getElementById('eventDescription').textContent = data.description;
+                    document.getElementById('eventDescription').textContent = data.description || 'No description provided';
                     document.getElementById('eventStart').textContent = new Date(data.start).toLocaleString();
                     document.getElementById('eventEnd').textContent = data.end ? new Date(data.end).toLocaleString() : 'Not specified';
                     document.getElementById('eventCreatedBy').textContent = data.created_by;
-                    document.getElementById('eventImportant').textContent = data.important ? 'Yes' : 'No';
+                    
+                    // Set important status with badge
+                    document.getElementById('eventImportantText').textContent = data.important ? 'Yes' : 'No';
+                    const badge = document.getElementById('eventImportantBadge');
+                    if (data.important) {
+                        badge.textContent = 'Important';
+                        badge.className = 'important-badge yes';
+                    } else {
+                        badge.textContent = 'Regular';
+                        badge.className = 'important-badge no';
+                    }
 
                     // Populate edit form
                     document.getElementById('editTitle').value = data.title;
@@ -230,8 +371,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show view mode
                     document.getElementById('viewMode').style.display = 'block';
                     document.getElementById('editMode').style.display = 'none';
-                    document.getElementById('editButton').style.display = 'block';
-                    document.getElementById('saveButton').style.display = 'none';
+                    
+                    // Only show edit buttons for superusers
+                    var isSuperuser = {% if user.is_superuser %}true{% else %}false{% endif %};
+                    if (isSuperuser) {
+                        document.getElementById('editButton').style.display = 'block';
+                        document.getElementById('saveButton').style.display = 'none';
+                    }
 
                     // Show the modal
                     var modal = new bootstrap.Modal(document.getElementById('viewEventModal'));

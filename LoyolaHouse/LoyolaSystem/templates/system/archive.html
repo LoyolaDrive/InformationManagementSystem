@@ -9,6 +9,61 @@
     .filter-btn:focus {
         box-shadow: none;
     }
+    
+    /* Rich text content styles */
+    .rich-text-content {
+        overflow-wrap: break-word;
+    }
+    .rich-text-content ul, .rich-text-content ol {
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    .rich-text-content ul li, .rich-text-content ol li {
+        margin-bottom: 0.5rem;
+    }
+    .rich-text-content p {
+        margin-bottom: 1rem;
+    }
+    .rich-text-content strong, .rich-text-content b {
+        font-weight: bold;
+    }
+    .rich-text-content em, .rich-text-content i {
+        font-style: italic;
+    }
+    .rich-text-content h1, .rich-text-content h2, .rich-text-content h3, .rich-text-content h4, .rich-text-content h5, .rich-text-content h6 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    .rich-text-content blockquote {
+        padding: 0.5rem 1rem;
+        margin: 0 0 1rem;
+        border-left: 5px solid #eee;
+    }
+    .rich-text-content pre {
+        display: block;
+        padding: 1rem;
+        margin: 0 0 1rem;
+        font-size: 0.875rem;
+        line-height: 1.4;
+        color: #333;
+        word-break: break-all;
+        word-wrap: break-word;
+        background-color: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .rich-text-content table {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+        border-collapse: collapse;
+    }
+    .rich-text-content table th, .rich-text-content table td {
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dee2e6;
+    }
 </style>
 {% endblock %}
 
@@ -110,15 +165,22 @@
                             <div>
                                 <span class="badge {% if announcement.email_level|stringformat:"s" == 'National' %}bg-primary{% elif announcement.email_level|stringformat:"s" == 'Regional' %}bg-success{% elif announcement.email_level|stringformat:"s" == 'Global' %}bg-warning{% elif announcement.email_level|stringformat:"s" == 'Local' %}bg-danger{% else %}bg-secondary{% endif %} me-2">{{ announcement.email_level }}</span>
                                 <span class="badge bg-secondary me-2">{{ announcement.email_type }}</span>
-                                <a href="#" onclick="confirmDelete('{% url 'loyola:delete_announcement' announcement.id %}')" class="text-danger"> <!--IGNORE-->
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                {% if user.is_superuser %}
+                                <span class="d-inline-flex">
+                                    <a href="{% url 'loyola:edit_announcement' announcement.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="#" onclick="confirmDeletion('{% url 'loyola:delete_announcement' announcement.id %}', 'announcement'); return false;" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                     <div id="collapse{{ forloop.counter }}" class="collapse" data-bs-parent="#accordionExample">
                         <div class="card-body">
-                            {{ announcement.content|linebreaks }}
+                            <div class="rich-text-content">{{ announcement.content|safe }}</div>
                             
                             {% if announcement.file_url %}
                             <div class="mt-3 p-3 bg-light rounded">
@@ -188,13 +250,9 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle form submission when category is clicked
         document.querySelectorAll('.btn-outline-secondary, .btn-outline-primary, .btn-outline-success, .btn-outline-warning, .btn-outline-danger, .btn-secondary, .btn-primary, .btn-success, .btn-warning, .btn-danger').forEach(btn => {
-            // We're using links now, so this is just for any additional JS functionality
-            // The main filtering happens server-side
         });
 
-        // Add fade-in animation for cards
         const cards = document.querySelectorAll('.announcement-card');
         cards.forEach(card => {
             card.style.opacity = '0';

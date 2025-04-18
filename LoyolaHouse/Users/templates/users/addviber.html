@@ -21,11 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-{% for message in messages %}
-    <div class="alert alert-{{ message.tags }} text-center">{{ message }}</div>
-{% endfor %}
-{% endif %}
 <div class="container mt-4">
     <h2>Viber Contacts</h2>
     
@@ -49,9 +44,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </form>
             </div>
             <div>
-                <a href="{% url 'users:removeViber' contact.user.id contact.viber_id %}" 
+                <a href="#" 
                    class="btn btn-outline-dark" 
-                   onclick="return confirm('Are you sure you want to delete this Viber contact?');">
+                   onclick="confirmDeletion('{% url 'users:removeViber' contact.user.id contact.viber_id %}', 'viber'); return false;">
                     Delete
                 </a>
             </div>

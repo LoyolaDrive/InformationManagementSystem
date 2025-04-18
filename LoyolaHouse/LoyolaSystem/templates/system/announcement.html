@@ -29,9 +29,35 @@
 
         <div class="form-group mb-4">
             <label for="emailContent" class="form-label">Content:</label>
-            <input id="emailContent" type="hidden" name="emailContent">
-            <trix-editor input="emailContent" class="form-control" style="min-height: 300px"></trix-editor>
+            <textarea id="emailContent" name="emailContent" class="form-control"></textarea>
         </div>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                ClassicEditor
+                    .create(document.querySelector('#emailContent'), {
+                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote', 'insertTable', 'undo', 'redo'],
+                        link: {
+                            addTargetToExternalLinks: true,
+                            defaultProtocol: 'https://',
+                            decorators: {
+                                openInNewTab: {
+                                    mode: 'manual',
+                                    label: 'Open in a new tab',
+                                    defaultValue: true,
+                                    attributes: {
+                                        target: '_blank',
+                                        rel: 'noopener noreferrer'
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            });
+        </script>
 
         <div class="form-group mb-4">
             <label for="attachment" class="form-label">Attachment (optional):</label>
@@ -41,32 +67,46 @@
             </div>
         </div>
 
+        <!-- Recipients Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Select Recipients</h5>
+                <button type="button" class="btn btn-sm btn-primary" id="selectAllBtn">Send All</button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3" style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 5px;">
+                    {% for user in users %}
+                        {% for viber in vibers %}
+                        {% if viber.user_id == user.id %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input recipient-checkbox" type="checkbox" name="recipients" value="{{ viber.viber_id }}" id="user{{ user.id }}">
+                            <label class="form-check-label" for="user{{ user.id }}">
+                                {{ user.last_name }}, {{ user.first_name }} - {{viber.viber_id}}
+                            </label>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
         <div class="text-center mt-4 mb-4">
             <button type="submit" class="btn btn-view-priest-profiles">Save</button>
         </div>
     </form>
 </div>
-<div class="container mb-5">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Select Recipients</h5>
-        </div>
-        <div class="card-body">
-            <div class="mb-3" style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 15px; border-radius: 5px;">
-                {% for user in users %}
-                    {% for viber in vibers %}
-                    {% if viber.user_id == user.id %}
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="recipients" value="{{ user.contact_number }}" id="user{{ user.id }}">
-                        <label class="form-check-label" for="user{{ user.id }}">
-                            {{ user.last_name }}, {{ user.first_name }} - {{viber.viber_id}}
-                        </label>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const checkboxes = document.querySelectorAll('.recipient-checkbox');
+        
+        selectAllBtn.addEventListener('click', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+    });
+</script>
 {% endblock content %}

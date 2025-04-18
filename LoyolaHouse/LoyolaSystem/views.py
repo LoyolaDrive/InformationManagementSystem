@@ -14,11 +14,15 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 import requests
+import os
+from twilio.rest import Client
 from .drive_utils import upload_file_to_drive
+from Users.decorators import superuser_required, owner_or_superuser_required
 
 # Create your views here.
 @never_cache
 @login_required
+@superuser_required
 def profiles_view(request):
     accounts = User.objects.all()
     contacts = ViberContact.objects.all()
@@ -96,15 +100,23 @@ def email_view(request):
     })
 
 @login_required
+@superuser_required
 def create_announcement(request):
     if request.method == 'POST':
+        # Debug the entire POST data
+        print("DEBUG - POST data keys:", request.POST.keys())
+        print("DEBUG - All form data:", dict(request.POST))
+        
         email_level_id = request.POST.get('email_level')
         email_type_id = request.POST.get('email_type')
         subject = request.POST.get('emailSubject')
         raw_content = request.POST.get('emailContent')
         attachment = request.FILES.get('attachment')
+        recipients = request.POST.getlist('recipients')
 
-        formatted_content = convert_html_to_text(raw_content)
+        # Keep the original HTML content for saving to the database
+        # But also create a plain text version for notifications
+        plain_text_content = convert_html_to_text(raw_content)
 
         if email_level_id and email_type_id and subject and raw_content:
             email_level = EmailLevel.objects.get(pk=email_level_id)
@@ -115,30 +127,61 @@ def create_announcement(request):
                 email_level=email_level,
                 email_type=email_type,
                 subject=subject,
-                content=formatted_content
+                content=raw_content  # Save the original HTML content
             )
             
             # Handle file attachment if provided
             if attachment:
                 try:
                     file_name = attachment.name
-                    file_id, file_url = upload_file_to_drive(attachment, file_name)
-                    
-                    if file_id and file_url:
-                        announcement.file_name = file_name
-                        announcement.file_url = file_url
-                        announcement.drive_file_id = file_id
+                    # Try to upload to Google Drive, but don't stop the announcement creation if it fails
+                    try:
+                        file_id, file_url = upload_file_to_drive(attachment, file_name)
                         
-                        # Add file info to the notification message
-                        formatted_content += f"\n\nAttachment: {file_name}\nDownload: {file_url}"
-                    else:
-                        messages.warning(request, 'Failed to upload the attachment to Google Drive. The announcement was saved without the attachment.')
+                        if file_id and file_url:
+                            announcement.file_name = file_name
+                            announcement.file_url = file_url
+                            announcement.drive_file_id = file_id
+                            
+                            # Add file info to the notification message
+                            plain_text_content += f"\n\nAttachment: {file_name}\nDownload: {file_url}"
+                        else:
+                            messages.warning(request, 'Failed to upload the attachment to Google Drive. The announcement was saved without the attachment.')
+                    except Exception as e:
+                        # Log the error but continue with announcement creation
+                        logging.error(f"Error uploading file to Google Drive: {e}")
+                        messages.warning(request, 'Google Drive upload failed. The announcement was saved without the attachment.')
                 except Exception as e:
-                    messages.error(request, f'Error uploading file: {str(e)}')
+                    messages.error(request, f'Error processing file: {str(e)}')
             
-            # Send notification and save announcement
-            sendNotif(formatted_content)
+            # Send Viber notification
+            sendNotif(plain_text_content)
+            
+            # Save announcement
             announcement.save()
+            
+            # Send SMS notifications to selected recipients using Twilio
+            print(f"DEBUG - Recipients: {recipients}")
+            if recipients:
+                try:
+                    # Create a simple SMS message
+                    sms_message = f"A new announcement has been added: {subject}"
+                    print(f"DEBUG - SMS Message: {sms_message}")
+                    
+                    # Send SMS to all selected recipients
+                    print(f"DEBUG - About to call send_sms with {len(recipients)} recipients")
+                    sms_result = send_sms(recipients, sms_message)
+                    print(f"DEBUG - SMS Result: {sms_result}")
+                    
+                    # Log results
+                    if sms_result.get('sent'):
+                        messages.success(request, f"SMS notifications sent to {len(sms_result['sent'])} recipients.")
+                    if sms_result.get('failed'):
+                        messages.warning(request, f"Failed to send SMS to {len(sms_result['failed'])} recipients.")
+                        print(f"DEBUG - Failed messages: {sms_result['failed']}")
+                except Exception as e:
+                    print(f"DEBUG - SMS Exception: {str(e)}")
+                    messages.error(request, f"Error sending SMS notifications: {str(e)}")
             
             messages.success(request, 'Announcement created successfully!')
             return redirect('loyola:dashboard')
@@ -211,6 +254,58 @@ def convert_html_to_text(raw_html):
     raw_html = re.sub(r'<br\s*/?>', '\n', raw_html)  # Convert <br> to \n
     text_only = strip_tags(raw_html)  # Remove remaining tags
     return text_only
+
+
+def send_sms(phone_numbers, message):
+    """
+    Send SMS notifications using Twilio
+    """
+    # Your Twilio credentials - should be stored in environment variables in production
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', 'ACb58e4122403d245e4677df2599a3a9b1')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', 'bd75c11ce4920c5abd32d7d4a24f8f5f')
+    from_number = os.environ.get('TWILIO_PHONE_NUMBER', '+12254433776')  # Fixed double plus sign
+    
+    print(f"DEBUG - Twilio credentials: SID={account_sid}, Token={auth_token[:4]}..., From={from_number}")
+    
+    # Initialize Twilio client
+    client = Client(account_sid, auth_token)
+    
+    sent_messages = []
+    failed_messages = []
+    
+    for phone in phone_numbers:
+        print(f"DEBUG - Processing phone number: {phone}")
+        # Ensure phone number is in E.164 format (required by Twilio)
+        # For Philippines, convert 09XXXXXXXXX to +639XXXXXXXXX
+        if phone and isinstance(phone, str) and phone.startswith('09') and len(phone) == 11:
+            formatted_phone = '+63' + phone[1:]
+            print(f"DEBUG - Converted Philippine number {phone} to {formatted_phone}")
+        else:
+            formatted_phone = phone
+            print(f"DEBUG - Using phone number as-is: {formatted_phone}")
+            
+        try:
+            # Send message
+            message_obj = client.messages.create(
+                body=message,
+                from_=from_number,
+                to=formatted_phone
+            )
+            sent_messages.append({
+                'phone': phone,
+                'sid': message_obj.sid,
+                'status': message_obj.status
+            })
+        except Exception as e:
+            failed_messages.append({
+                'phone': phone,
+                'error': str(e)
+            })
+    
+    return {
+        'sent': sent_messages,
+        'failed': failed_messages
+    }
 
 #for ttesting purposes only
 
@@ -293,19 +388,108 @@ def send_individual_message():
     return response.status_code, response.json()
 
 @login_required
+@superuser_required
 def delete_announcement(request, announcement_id):
     try:
         announcement = Announcement.objects.get(pk=announcement_id)
         announcement.delete()
-        return redirect('loyola:dashboard')
+        messages.success(request, 'Announcement deleted successfully!')
     except Announcement.DoesNotExist:
+        messages.error(request, 'Announcement not found!')
+    return redirect('loyola:dashboard')
+
+@login_required
+@superuser_required
+def edit_announcement(request, announcement_id):
+    try:
+        announcement = Announcement.objects.get(pk=announcement_id)
+        
+        if request.method == 'POST':
+            email_level_id = request.POST.get('email_level')
+            email_type_id = request.POST.get('email_type')
+            subject = request.POST.get('emailSubject')
+            raw_content = request.POST.get('emailContent')
+            replace_attachment = request.POST.get('replaceAttachment') == 'on'
+            attachment = request.FILES.get('attachment')
+            
+            if email_level_id and email_type_id and subject and raw_content:
+                email_level = EmailLevel.objects.get(pk=email_level_id)
+                email_type = EmailType.objects.get(pk=email_type_id)
+                
+                # Update the announcement
+                announcement.email_level = email_level
+                announcement.email_type = email_type
+                announcement.subject = subject
+                announcement.content = raw_content
+                
+                # Handle file attachment if provided
+                # Upload if: (1) replacing existing attachment OR (2) adding new attachment when none exists
+                if (replace_attachment and attachment) or (not announcement.file_url and attachment):
+                    try:
+                        file_name = attachment.name
+                        # Try to upload to Google Drive
+                        try:
+                            file_id, file_url = upload_file_to_drive(attachment, file_name)
+                            
+                            if file_id and file_url:
+                                # Update attachment information
+                                announcement.file_name = file_name
+                                announcement.file_url = file_url
+                                announcement.drive_file_id = file_id
+                                messages.success(request, 'Attachment updated successfully!')
+                            else:
+                                messages.warning(request, 'Failed to upload the new attachment to Google Drive.')
+                        except Exception as e:
+                            logging.error(f"Error uploading file to Google Drive: {e}")
+                            messages.warning(request, 'Google Drive upload failed. The announcement was updated without changing the attachment.')
+                    except Exception as e:
+                        messages.error(request, f'Error processing file: {str(e)}')
+                
+                announcement.save()
+                
+                messages.success(request, 'Announcement updated successfully!')
+                return redirect('loyola:dashboard')
+            else:
+                messages.error(request, 'All fields are required!')
+        
+        # For GET requests or if POST validation fails
+        email_levels = EmailLevel.objects.all()
+        email_types = EmailType.objects.all()
+        
+        return render(request, 'system/edit_announcement.html', {
+            'announcement': announcement,
+            'email_levels': email_levels,
+            'email_types': email_types,
+        })
+        
+    except Announcement.DoesNotExist:
+        messages.error(request, 'Announcement not found!')
         return redirect('loyola:dashboard')
+
+@login_required
+@superuser_required
+def delete_attachment(request, announcement_id):
+    try:
+        announcement = Announcement.objects.get(pk=announcement_id)
+        
+        # Clear attachment fields
+        announcement.file_name = None
+        announcement.file_url = None
+        announcement.drive_file_id = None
+        announcement.save()
+        
+        messages.success(request, 'Attachment deleted successfully!')
+    except Announcement.DoesNotExist:
+        messages.error(request, 'Announcement not found!')
+    
+    return redirect('loyola:edit_announcement', announcement_id=announcement_id)
 
 @login_required
 def calendar_view(request):
     return render(request, 'system/calendar.html')
 
 @login_required
+@superuser_required
 def add_event(request):
     if request.method == 'POST':
         title = request.POST.get('title')
@@ -357,6 +541,7 @@ def get_event_details(request, event_id):
         return JsonResponse({'error': 'Event not found'}, status=404)
 
 @login_required
+@superuser_required
 def delete_event(request, event_id):
     if request.method == 'POST':
         try:
@@ -368,6 +553,7 @@ def delete_event(request, event_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
+@superuser_required
 def update_event(request, event_id):
     if request.method == 'POST':
         try:

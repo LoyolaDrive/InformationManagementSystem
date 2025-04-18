@@ -32,13 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-{% for message in messages %}
-<div class="my-4 mx-3 alert alert-{{ message.tags }} text-center {% if message.tags == 'error' %}bg-danger text-white rounded{% endif %}">
-    {{ message }}
-</div>
-{% endfor %}
-{% endif %}
 
 <div class="container">
     <form action="{% url 'users:editAccount' user.id %}" method="POST">

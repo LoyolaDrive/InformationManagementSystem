@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "loyolaproject",
+  "private_key_id": "b43371fe4c1e27db0e88ac58d4b52ca72fab1a5c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCw4nYjSH+eX75e\nFh+iUNlD2AsTlnsIKnIPhXAjZRheNs0ZN37x6OKU+WIaH0VEhc/m3cyH/3UIOZpO\nlvh8MK3Nnn7czbRS+hT2DGaP6o2pqmwyzPoRDjfq4J1kWhb/2nkO/mvnj6u4mgc2\nnt0oCJkQEDS4qw+exO4QEwKap2RJ4kJkkBXDVepqSJTYAVmqf4jq079tH8p9td4W\nI+Ig0EEx4mvTtLtn2rycILIO6z4jMaIwXOqZL7zzykoQxhqZII55E7cT4hyXYmFX\n8c24DP5olZAOSadP9jzhsZj4nuIrMqCUC1kd9QvuUKFdpVTpzoja661FP94nnywm\nnpnlT1mRAgMBAAECggEABiR5wsQ9PkmH3v+OA1Z4Z605xpPcBjlnHZfeKt8osfjd\nisnNEZHV8HjFNIVaeUSGUYzpPIhypCGlSfkJ0aePxDYD+h9LQEhpRZls+a7E/ZvV\nRwxW22nEJ6wQ0Hp6avxyEMMQCd9eMLpp6WEp6pPQhj4cfpSI0H7OijtcGfUZ0Uud\n220qPBIJd4pJ5D9lYccNSeAMdg6zAkZebtIP88k8e5dVlAlIj7CWq7+SMQZXP2ON\nwLcgSsHUbEUO25+PSW4g2oB2XZ02YW77TrTUrGMth36aLhrThPZKD9gha7CpJGWt\nxzfM6cXmLR5/OW1/FcAzaSGNU2Ir1PKoQgmjGCHjcwKBgQDb1sK5QbkBfNtmA+CJ\nBcNRv2FoK30Dqal5zNquQ/w+2EGkHNna6WKnPzb9LVHUOU6jrO4UBf7PmCbzeyGT\nqtxT6I+BKO1esrdA3JVrjAf25b/R/e8dY9ikcJBQjeXo+gXxP3xoNhFvBq4oZUuh\nzoU52MDKccupO4cL/7tFEo7OywKBgQDN+u4dPmjJepY16UMSPa+9p75X/o6nJciO\n0oBArzGa4dT+AOLyO3xC2DB8ZwEdOnfMLtteK+o/Ljbn5XrOBe+IPYqBiZcikh55\nIyzCUrtN0HkguoHWt8/wlCEL/pOb/Z6mt8zGZYBLEaqSBolMdCyzQK00zFlRKWG5\nhhT6rDVxkwKBgDo1ll/JSDxdnBZaBnUhooMdwqP7h+GVZfuLQ4gLFlpplo/m18SA\nMZAJS/0jp9wixHDQVEXXBI5hQkcMHmrkPey10nGnrZp6hc1V2vacIGu+j9kBfPPy\nQSXhbET4HZ1fvn0Pi1hooJseULT/hVQ1w876VqoEEaIg0fRaZXK3pDqbAoGAT9DD\nQfuz+RaSbDOGNORIXBJK9KgEOQqwC3/QCMCaVSzbLs3DIyAfx3skVqBHUz8burgR\ncw1LSM4sonFOw9SS+9T0/bsGIHREcKZLqsUKJV36Ac+jjkNNxShxIce1BQYi2vFv\n3RTpwK0IzmrP+xstUwxl0Ya5uXRylMQ7DuN6FhcCgYB6hD3NFOpq8qZUZq8lsGjF\nwgywWCZVhiphhvI8zS0d8G+ldT6AI0f/xDiia15AIc9214YLYm4ydJOE2Oxs5KoC\nbX8jvxelW0eFhoSwwieVz8xrsyDjmqKazQZcEPAtcjzaxiTE/JVwtrknN5pi5x8S\nOVuCHEkzuJx04nOaO31VWA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "loyoladriveservice@loyolaproject.iam.gserviceaccount.com",
+  "client_id": "117792138113825239066",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/loyoladriveservice%40loyolaproject.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

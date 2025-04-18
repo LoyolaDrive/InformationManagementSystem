@@ -16,19 +16,39 @@ def get_drive_service():
     try:
         # Path to the service account credentials file
         credentials_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
-                                    'Assests', 'loyolaproject-8e285f4f17a0.json')
+                                    'GoogleDrive_JSON', 'loyolaproject-b43371fe4c1e.json')
         
         # Verify the credentials file exists
         if not os.path.exists(credentials_path):
             logging.error(f"Credentials file not found at: {credentials_path}")
+            return None
+            
+        # Check if the credentials file is readable and valid JSON
+        try:
+            import json
+            with open(credentials_path, 'r') as f:
+                json.load(f)
+        except json.JSONDecodeError:
+            logging.error(f"Credentials file is not valid JSON: {credentials_path}")
+            return None
+        except Exception as e:
+            logging.error(f"Error reading credentials file: {e}")
             return None
         
         # Define the scopes needed for Google Drive
         SCOPES = ['https://www.googleapis.com/auth/drive']
         
         # Create credentials using the service account file
-        credentials = service_account.Credentials.from_service_account_file(
-            credentials_path, scopes=SCOPES)
+        try:
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path, scopes=SCOPES)
+        except Exception as e:
+            if 'invalid_grant' in str(e) and 'JWT Signature' in str(e):
+                logging.error("Invalid JWT Signature error: The service account credentials may be expired or invalid.")
+                logging.error("Please generate new service account credentials from the Google Cloud Console.")
+            else:
+                logging.error(f"Error creating credentials: {e}")
+            return None
         
         # Build the Drive service
         service = build('drive', 'v3', credentials=credentials)
@@ -50,24 +70,24 @@ def upload_file_to_drive(file_obj, file_name):
         tuple: (file_id, file_url) if successful, (None, None) otherwise
     """
     temp_file_path = None
+    media = None
     try:
-        # Get the Drive service
         drive_service = get_drive_service()
         if not drive_service:
             logging.error("Failed to create Drive service")
             return None, None
         
-        # Create a temporary file to upload
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            # Write the content of the uploaded file to the temporary file
             for chunk in file_obj.chunks():
                 temp_file.write(chunk)
             
             temp_file_path = temp_file.name
+            # Make sure the file is fully written and closed before proceeding
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
         
         logging.info(f"Temporary file created at: {temp_file_path}")
         
-        # Determine the MIME type based on the file extension
         mime_type = 'application/octet-stream'  # Default MIME type
         if '.' in file_name:
             ext = file_name.split('.')[-1].lower()
@@ -92,11 +112,15 @@ def upload_file_to_drive(file_obj, file_name):
         }
         
         # Create a MediaFileUpload object
-        media = MediaFileUpload(
-            temp_file_path,
-            mimetype=mime_type,
-            resumable=True
-        )
+        try:
+            media = MediaFileUpload(
+                temp_file_path,
+                mimetype=mime_type,
+                resumable=True
+            )
+        except Exception as e:
+            logging.error(f"Error creating MediaFileUpload: {e}")
+            return None, None
         
         # Upload the file to Google Drive
         logging.info("Uploading file to Google Drive...")
@@ -147,10 +171,27 @@ def upload_file_to_drive(file_obj, file_name):
         return None, None
     
     finally:
-        # Clean up the temporary file
-        if temp_file_path and os.path.exists(temp_file_path):
+        # Clean up resources
+        if media:
             try:
-                os.unlink(temp_file_path)
-                logging.info(f"Temporary file {temp_file_path} removed")
+                # Close any open file handles in the MediaFileUpload object
+                if hasattr(media, '_fd') and media._fd:
+                    media._fd.close()
             except Exception as e:
-                logging.error(f"Error removing temporary file: {e}")
+                logging.error(f"Error closing media file handle: {e}")
+                
+        # Clean up the temporary file with retry logic
+        if temp_file_path and os.path.exists(temp_file_path):
+            for attempt in range(3):  # Try up to 3 times
+                try:
+                    # Small delay to ensure file handles are released
+                    import time
+                    time.sleep(0.5)
+                    os.unlink(temp_file_path)
+                    logging.info(f"Temporary file {temp_file_path} removed on attempt {attempt+1}")
+                    break  # Success, exit the loop
+                except Exception as e:
+                    if attempt == 2:  # Last attempt
+                        logging.error(f"Failed to remove temporary file after 3 attempts: {e}")
+                    else:
+                        logging.warning(f"Attempt {attempt+1} to remove file failed: {e}, retrying...")
