@@ -37,6 +37,7 @@ def log_out(request):
     request.session.flush()
     return redirect('users:login')
 
+@never_cache
 @login_required
 def email_view(request):
     from datetime import datetime
@@ -99,6 +100,7 @@ def email_view(request):
         'category_filter': category_filter
     })
 
+@never_cache
 @login_required
 @superuser_required
 def create_announcement(request):

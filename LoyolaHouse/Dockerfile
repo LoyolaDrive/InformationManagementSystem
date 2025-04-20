@@ -1,43 +1,56 @@
-FROM python:3.11-slim
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set work directory
+# Stage 1: Base build stage
+FROM python:3.12-slim AS builder
+ 
+# Create the app directory
+RUN mkdir /app
+ 
+# Set the working directory
 WORKDIR /app
-
-# Install system dependencies first
-RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
-    pkg-config \
-    build-essential \
-    netcat-openbsd \
-    python3-dev
-
-# Install dependencies
+ 
+# Set environment variables to optimize Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 
+ 
+# Upgrade pip and install dependencies
+RUN pip install --upgrade pip 
+ 
+# Copy the requirements file first (better caching)
 COPY requirements.txt /app/
+ 
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+ 
+# Stage 2: Production stage
+FROM python:3.12-slim
+ 
+RUN useradd -m -r appuser && \
+   mkdir /app && \
+   chown -R appuser /app
+ 
+# Install netcat before switching users
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
-# Copy project
-COPY . /app/
+# Copy the Python dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+ 
+# Set the working directory
+WORKDIR /app
+ 
+# Copy application code
+COPY --chown=appuser:appuser . .
+ 
+# Set environment variables to optimize Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 
 
-# Create media directory
-RUN mkdir -p /app/media
+# Switch to non-root user
+USER appuser
+ 
+# Expose the application port
+EXPOSE 8000
 
-# Create a startup script
-RUN echo '#!/bin/bash' > /app/start.sh \
-    && echo 'echo "Waiting for MySQL database to be ready..."' >> /app/start.sh \
-    && echo 'while ! nc -z db 3306; do' >> /app/start.sh \
-    && echo '  sleep 0.5' >> /app/start.sh \
-    && echo 'done' >> /app/start.sh \
-    && echo 'echo "MySQL database is ready!"' >> /app/start.sh \
-    && echo 'export DJANGO_SETTINGS_MODULE=LoyolaHouse.docker_settings' >> /app/start.sh \
-    && echo 'python manage.py makemigrations' >> /app/start.sh \
-    && echo 'python manage.py migrate' >> /app/start.sh \
-    && echo 'python manage.py collectstatic --noinput' >> /app/start.sh \
-    && echo 'python manage.py runserver 0.0.0.0:8000' >> /app/start.sh \
-    && chmod +x /app/start.sh
-
-# Run startup script
-CMD ["/app/start.sh"]
+RUN chmod +x /app/entrypoint.sh
+# Start the application using Gunicorn
+CMD ["/app/entrypoint.sh"]
+#CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -55,6 +55,11 @@ try:
         admin_user.set_password('admin')
         admin_user.save()
         print('Existing superuser updated.')
+
+    # Create user roles if they don't exist
+    user_roles = ['Admin', 'Regular']
+    for role in user_roles:
+        roles.objects.get_or_create(role_desc=role)
     
     # Create email levels if they don't exist
     email_levels = ['National', 'Regional', 'Global', 'Local']
@@ -67,6 +72,7 @@ try:
     for type_desc in email_types:
         EmailType.objects.get_or_create(type_desc=type_desc)
     print(f'Email types created: {email_types}')
+
 except Exception as e:
     print(f'Error in setup: {e}')
 "

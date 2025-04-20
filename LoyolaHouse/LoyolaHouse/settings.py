@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,11 +28,7 @@ DEBUG = True
 
 # settings.py
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'f243-103-62-153-140.ngrok-free.app',
-]
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',  # Trust all ngrok subdomains
@@ -94,11 +91,11 @@ EMAIL_USE_TLS = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'LoyolaDB',
-        'USER': 'root',
-        'PASSWORD': 'remwell981996',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
         'OPTIONS':{
             'sql_mode': 'STRICT_TRANS_TABLES'
         }

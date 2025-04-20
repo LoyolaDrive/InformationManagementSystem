@@ -31,6 +31,7 @@ def login_view(request):
 
     return render(request, 'users/login.html')
 
+@never_cache
 @login_required
 @superuser_required
 def register_view(request):
@@ -96,6 +97,7 @@ def register_view(request):
         'roles': Roles,
     })
 
+@never_cache
 @login_required
 @owner_or_superuser_required
 def editprofile_view(request, user_id):
@@ -156,6 +158,7 @@ def editprofile_view(request, user_id):
             'currentrole': currentrole
         })
 
+@never_cache
 @login_required
 @owner_or_superuser_required
 def addviber_view(request, user_id):
@@ -176,6 +179,7 @@ def addviber_view(request, user_id):
 def profile_view(request):
     return render(request, 'users/myprofile.html')
 
+@never_cache
 @login_required
 @owner_or_superuser_required
 def deleteViber(request, user_id, viber_id):
@@ -184,6 +188,7 @@ def deleteViber(request, user_id, viber_id):
 
     return redirect('users:addViber', user_id=user_id)
 
+@never_cache
 @login_required
 @superuser_required
 def deleteUser(request, user_id):
@@ -192,6 +197,7 @@ def deleteUser(request, user_id):
 
     return redirect('loyola:profiles')
 
+@never_cache
 @login_required
 @owner_or_superuser_required
 def updateViber(request, user_id, viber_id):
