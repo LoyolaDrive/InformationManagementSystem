@@ -1,5 +1,6 @@
-{% extends "dashboard.html" %}
 
+{% extends "dashboard.html" %}
+{% load static %}
 {% block head %}
 <style>
     /* Add any archive-specific styles here */
@@ -68,10 +69,14 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="container-fluid mt-4">
     <div class="row">
         <!-- Important Dates Section -->
         <div class="col-md-3 mb-4">
+            <div class="text-center" style="margin-bottom: 20px;">
+                <img src="{% static 'assets/seal.png' %}" alt="Loyola Seal" style="width: 250px; display: inline-block;"/>
+            </div>
             <!-- Important Events -->
             <div class="card mb-4 border-danger">
                 <div class="card-header bg-danger text-white">
@@ -126,6 +131,12 @@
         </div>
         <!-- Main Content (Announcements) -->
         <div class="col-md-9">
+            {% if user.is_superuser %}
+            <div style="margin-bottom: 20px;">
+            <a href="{% url 'loyola:newAnnouncement' %}"><button class="btn btn-create-announcement" style="padding: 10px 20px; margin-right: 15px;" ><i class="bi bi-envelope-paper-fill"></i> Create Announcement</button></a>
+            <a href="{% url 'loyola:profiles' %}"> <button class="btn btn-view-priest-profiles" style="padding: 10px 20px"><i class="bi bi-person-fill"></i>Manage Priest Profiles</button></a>
+            </div>
+            {% endif %}
             <!-- Search and Filter Bar -->
             <div class="card mb-3">
                 <div class="card-body p-3">
@@ -158,8 +169,8 @@
                     <div class="card-header" id="heading{{ forloop.counter }}">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <button class="btn btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
-                                    {{ announcement.subject }}
+                                <button class="btn btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" style="color: #000">
+                                    <h4>{{ announcement.subject }}</h4>
                                 </button>
                             </h5>
                             <div>

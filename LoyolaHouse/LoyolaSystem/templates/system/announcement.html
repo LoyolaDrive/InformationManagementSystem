@@ -1,6 +1,17 @@
 {% extends "dashboard.html" %}
 {% block content %}
 <div class="container mt-5">
+    <div class="mb-4 row align-items-center">
+        <div class="col-auto mb-2 mb-md-0">
+            <a href="{% url 'loyola:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+        <div class="col">
+            <h2 class="mb-1">Create Announcement</h2>
+            <p class="text-muted mb-0">Update the announcement details below</p>
+        </div>
+    </div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 

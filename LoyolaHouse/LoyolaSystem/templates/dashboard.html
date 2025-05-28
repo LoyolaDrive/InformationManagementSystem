@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loyola Bulletin</title>
+    <link rel="icon" type="image/png" href="{% static 'assets/seal.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
@@ -12,32 +13,32 @@
     <!-- CKEditor 5 -->    
     <script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>
     
-    <!-- PT Serif Font -->
+    <!-- Poppins Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         body {
-            font-family: "PT Serif", serif;
+            font-family: "Poppins", sans-serif;
         }
-        .pt-serif-regular {
-            font-family: "PT Serif", serif;
+        .poppins-regular {
+            font-family: "Poppins", sans-serif;
             font-weight: 400;
             font-style: normal;
         }
         .pt-serif-bold {
-            font-family: "PT Serif", serif;
+            font-family: "Poppins", sans-serif;
             font-weight: 700;
             font-style: normal;
         }
         .pt-serif-regular-italic {
-            font-family: "PT Serif", serif;
+            font-family: "Poppins", sans-serif;
             font-weight: 400;
             font-style: italic;
         }
         .pt-serif-bold-italic {
-            font-family: "PT Serif", serif;
+            font-family: "Poppins", sans-serif;
             font-weight: 700;
             font-style: italic;
         }
@@ -56,26 +57,37 @@
         .navbar-brand:hover strong {
             color: #1d4258 !important;
         }
+        #navbar {
+            background-color: #347BA7;
+        }
+        #navbar a, #navbar i, #navbar strong {
+            color: #fff;
+        }
+        #navbar a:hover, #navbar i:hover, #navbar strong:hover {
+            color: #1d4258;
+        }
     </style>
 
 </head>
 <body>
-    <nav class="navbar navbar-light bg-light px-3" id="navbar" >
-        <a href="{% url 'loyola:dashboard' %}" class="navbar-brand mb-0 h1">
-            <i class="bi bi-bookmarks-fill icon-custom-color"></i> <strong style="color: #347BA7;">Loyola Bulletin</strong>
+    <nav class="navbar navbar-light px-3" id="navbar" style="padding:25px;">
+        <a href="{% url 'loyola:dashboard' %}" class="navbar-brand mb-0 h1" style="margin-left: 20px;">
+            <i class="bi bi-bookmarks-fill icon-custom-color"></i> <strong>Loyola Bulletin</strong>
         </a>
         <div>
-            <a href="{% url 'loyola:edit_profile' %}" class="me-3" style="text-decoration: none; color: #347BA7;"><i class="bi bi-person-circle icon-custom-color"></i> <strong>My Profile</strong></a>
-            <a href="{% url 'loyola:dashboard' %}" class="me-3" style="text-decoration: none; color: #347BA7;"><i class="bi bi-house-fill icon-custom-color"></i> <strong>Dashboard</strong></a>
+            <a href="{% url 'loyola:dashboard' %}" class="me-3" style="text-decoration: none;"><i class="bi bi-house-fill icon-custom-color"></i> <strong>Dashboard</strong></a>
             {% if user.is_superuser %}
-            <a href="{% url 'loyola:calendar' %}" class="me-3" style="text-decoration: none; color: #347BA7;"><i class="bi bi-calendar-fill icon-custom-color"></i> <strong>Manage Calendar</strong></a>
+            <a href="{% url 'loyola:calendar' %}" class="me-3" style="text-decoration: none; color: #fff;"><i class="bi bi-calendar-fill icon-custom-color"></i> <strong>Manage Calendar</strong></a>
             {% else %}
-            <a href="{% url 'loyola:calendar' %}" class="me-3" style="text-decoration: none; color: #347BA7;"><i class="bi bi-calendar-fill icon-custom-color"></i> <strong>View Calendar</strong></a>
+            <a href="{% url 'loyola:calendar' %}" class="me-3" style="text-decoration: none; color: #fff;"><i class="bi bi-calendar-fill icon-custom-color"></i> <strong>View Calendar</strong></a>
             {% endif %}
-            <a href="{% url 'loyola:logout' %}" class="me-3"style="text-decoration: none; color: #347BA7;"><i class="bi bi-door-closed-fill icon-custom-color"></i> <strong>Logout</strong></a>
-        </div>
+            <a href="{% url 'loyola:edit_profile' %}" class="me-3" style="text-decoration: none;"><i class="bi bi-person-circle icon-custom-color"></i> <strong>My Profile</strong></a>
+            <a href="{% url 'loyola:logout' %}" class="me-3"style="text-decoration: none; color: #fff;"><i class="bi bi-door-closed-fill icon-custom-color"></i> <strong>Logout</strong></a>
+        </div style="margin-right: 20px;">
     </nav>
     <div class="container mt-4">
+    <div class="row">
+    <div class="col-12">
         {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} text-center alert-dismissible fade show">{{ message }}
@@ -83,13 +95,11 @@
             </div>
         {% endfor %}
         {% endif %}
-        {% if user.is_superuser %}
-        <a href="{% url 'loyola:newAnnouncement' %}"><button class="btn btn-create-announcement"><i class="bi bi-envelope-paper-fill"></i> Create Announcement</button></a>
-        <a href="{% url 'loyola:profiles' %}"> <button class="btn btn-view-priest-profiles"><i class="bi bi-person-fill"></i>Manage Priest Profiles</button></a>
-        {% endif %}
 
         {% block content %}{% endblock content %}
     </div>
+</div>
+</div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">

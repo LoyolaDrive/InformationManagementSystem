@@ -1,5 +1,12 @@
 {% extends "dashboard.html" %}
 {% block content %}
+<div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+  <a href="{% url 'loyola:dashboard' %}">
+        <button class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
+  </a>
+</div>
   <div class="card mt-3">
     <div class="card-header d-flex align-items-center justify-content-between">
       <strong class="mb-0">Jesuit Profiles</strong>
