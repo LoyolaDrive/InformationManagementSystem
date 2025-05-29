@@ -81,6 +81,7 @@ except Exception as e:
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
+cat 
 # Start server
 echo "Starting server..."
-exec python manage.py runserver 0.0.0.0:8000
+python -m gunicorn --bind 0.0.0.0:8010 --workers 3 LoyolaHouse.wsgi:application

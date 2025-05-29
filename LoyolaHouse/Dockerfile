@@ -33,6 +33,8 @@ RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/l
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+RUN apt-get update && apt-get install -y dos2unix
  
 # Set the working directory
 WORKDIR /app
@@ -48,9 +50,9 @@ ENV PYTHONUNBUFFERED=1
 USER appuser
  
 # Expose the application port
-EXPOSE 8000
+EXPOSE 8010
 
-RUN chmod +x /app/entrypoint.sh
+RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
 # Start the application using Gunicorn
 CMD ["/app/entrypoint.sh"]
-#CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
