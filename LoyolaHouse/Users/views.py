@@ -174,7 +174,7 @@ def addviber_view(request, user_id):
             viber_id = viber_id
         )
     viber= ViberContact.objects.filter(user=user_id)
-    return render(request, 'users/addViber.html',{'viber': viber,})
+    return render(request, 'users/addviber.html',{'viber': viber,})
 
 def profile_view(request):
     return render(request, 'users/myprofile.html')
