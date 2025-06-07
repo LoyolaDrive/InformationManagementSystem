@@ -21,11 +21,15 @@ This project is configured to run in Docker containers for easy deployment and d
 
 2. Build and start the containers:
    ```
-   docker-compose -f docker-compose.dev.yml up --build
+   docker-compose up --build
    ```
-
-3. Access the application:
-   - Web application: http://localhost:8000
+3. Add to local DNS:<br>
+   path C:\Windows\System32\drivers\etc\hosts
+   ```
+   127.0.0.1 xu.loyola.local
+   ```
+5. Access the application:
+   - Web application: http://xu.loyola.local
    - Default admin credentials:
      - Username: admin
      - Password: admin
@@ -59,7 +63,7 @@ For development purposes, the application code is mounted as a volume, so change
 Migrations are automatically applied when the container starts. If you need to run migrations manually:
 
 ```
-docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
+docker-compose exec web python manage.py migrate
 ```
 
 ### Creating a Superuser
@@ -67,7 +71,7 @@ docker-compose -f docker-compose.dev.yml exec web python manage.py migrate
 A default superuser is created automatically. If you need to create another superuser:
 
 ```
-docker-compose -f docker-compose.dev.yml exec web python manage.py createsuperuser
+docker-compose exec web python manage.py createsuperuser
 ```
 
 ## Production Deployment
@@ -84,3 +88,12 @@ For production deployment, additional configuration is recommended:
 
 - The default admin credentials should be changed in production
 - Sensitive information should be stored in environment variables, not in the code
+
+## ENV File
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+MYSQL_ROOT_PASSWORD=
+DB_HOST=
+DB_PORT=
+DEBUG=False
