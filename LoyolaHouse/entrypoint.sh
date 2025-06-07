@@ -43,7 +43,7 @@ try:
         admin_user.save()
         
         # Create admin role if not exists
-        admin_role, created = roles.objects.get_or_create(role_desc='Admin')
+        admin_role, created = roles.objects.get_or_create(role_desc='Rector')
         
         # Assign admin role to admin user
         UserRole.objects.create(user=admin_user, role_id=admin_role.role_id)
@@ -57,7 +57,7 @@ try:
         print('Existing superuser updated.')
 
     # Create user roles if they don't exist
-    user_roles = ['Admin', 'Regular']
+    user_roles = ['Rector', 'Jesuit']
     for role in user_roles:
         roles.objects.get_or_create(role_desc=role)
     

@@ -2,7 +2,7 @@ services:
   db:
     image: mysql:8.0
     container_name: "loyola_db_dev"
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -25,7 +25,7 @@ services:
     container_name: "loyola_web_dev"
     env_file:
       - .env
-    restart: on-failure:3
+    restart: unless-stopped
     volumes:
       - ./manage.py:/app/manage.py
       - ./requirements.txt:/app/requirements.txt
@@ -44,6 +44,7 @@ services:
   nginx:
     image: nginx
     container_name: "Loyola_Nginx"
+    restart: unless-stopped
     ports:
       - 80:80
     volumes: 
