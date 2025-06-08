@@ -8,8 +8,8 @@
   <form action="{% url 'users:login' %}" method='POST'>
     {% csrf_token %}
       <div class="form-outline mb-4" style="margin-top:40px;">
-        <label class="form-label" for="username">Username</label>
-        <input type="text" id="username" name='username' class="form-control" placeholder="Username" required/>
+        <label class="form-label" for="username">Email</label>
+        <input type="text" id="username" name='username' class="form-control" placeholder="example@gmail.com" required/>
       </div>
     
       <div class="form-outline mb-4">

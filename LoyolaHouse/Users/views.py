@@ -26,7 +26,7 @@ def login_view(request):
             login(request, user)
             return redirect('loyola:dashboard')
         else:
-            messages.error(request, "Wrong Username and Password. Try Again...")
+            messages.error(request, "Wrong Email or Password. Please Try Again")
             return redirect('users:login')
 
     return render(request, 'users/login.html')
