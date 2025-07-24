@@ -56,10 +56,10 @@ def register_view(request):
             is_staff = False
             is_active = True
 
-            if selected_role.role_desc.lower() == 'admin':
+            if selected_role.role_desc.lower() == 'rector':
                 is_superuser = True
                 is_staff = True
-            elif selected_role.role_desc.lower() == 'regular':
+            elif selected_role.role_desc.lower() == 'jesuit':
                 is_active = True
 
             user = User.objects.create_user(
@@ -139,10 +139,10 @@ def editprofile_view(request, user_id):
         user.is_staff = False
         user.is_active = True
         
-        if selected_role.role_desc.lower() == "admin":
+        if selected_role.role_desc.lower() == "rector":
             user.is_superuser = True
             user.is_staff = True 
-        elif selected_role.role_desc.lower() == "regular":
+        elif selected_role.role_desc.lower() == "jesuit":
             user.is_active = True
 
         user.save()
