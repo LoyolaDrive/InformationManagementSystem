@@ -120,7 +120,7 @@ def create_announcement(request):
         # But also create a plain text version for notifications
         plain_text_content = convert_html_to_text(raw_content)
 
-        if email_level_id and email_type_id and subject and raw_content:
+        if email_level_id and email_type_id and subject:
             email_level = EmailLevel.objects.get(pk=email_level_id)
             email_type = EmailType.objects.get(pk=email_type_id)
             
@@ -609,10 +609,13 @@ def edit_profile(request):
         user.save()
         
         # Update or create viber contact
-        ViberContact.objects.update_or_create(
-            user=user,
-            defaults={'viber_id': viber, 'name': f'{first_name} {last_name}'}
-        )
+        if viber:  # Only create/update if viber is not None
+            ViberContact.objects.update_or_create(
+                user=user,
+                defaults={'viber_id': viber, 'name': f'{first_name} {last_name}'}
+            )
+        else:  # If viber is None, delete any existing viber contact
+            ViberContact.objects.filter(user=user).delete()
         
         # Handle password change if requested
         new_password = request.POST.get('new_password')
